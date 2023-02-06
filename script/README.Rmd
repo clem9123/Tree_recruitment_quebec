@@ -5,7 +5,11 @@ date : "02/02/2023"
 output: github_document
 ---
 
-```{r, setup, include=FALSE}
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "../")
+```
+
+```{r, library, include=FALSE}
 # Library loading
 library(sf)
 library(mapview)
@@ -19,7 +23,7 @@ library(lme4)
 ### 1.1. Les espèces
 
 ```{r, include = FALSE}
-tree_sp <- read.csv("Tree_sp.csv", sep = ",", encoding = "UTF-8",
+tree_sp <- read.csv("data/Tree_sp.csv", sep = ",", encoding = "UTF-8",
     header = TRUE, check.names = FALSE)
 # supprimer les espaces inutiles
 tree_sp$code <- gsub(" ", "", tree_sp$code)
@@ -59,7 +63,7 @@ seedling_xy <- st_read("data/PEP_GPKG/PEP.gpkg",
     layer = "vue_pe_station_semis")
 pep_soil_xy <- st_read("data/PEP_GPKG/PEP.gpkg",
     layer = "vue_pe_station_sol")
-pep_ori <- st_read("raw_data/PEP_GPKG/PEP.gpkg",
+pep_ori <- st_read("data/PEP_GPKG/PEP.gpkg",
     layer = "pee_ori_sond")
 # Encoding for french characters (UTF8 correction)
 pep_pe <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "station_pe")
@@ -418,21 +422,21 @@ Comment étudier le déplacement géographique des différentes espèces ?
 ## 6. Distribution spatiale de la diversité
 
 ```{r}
-a <- tree_mes_xy %>%
-    filter (no_mes == 1) %>%
-    group_by(id_pe, essence) %>%
-    summarize(diversity = n()) %>%
-    mapview()
+#a <- tree_mes_xy %>%
+#    filter (no_mes == 1) %>%
+#    group_by(id_pe, essence) %>%
+#    summarize(diversity = n()) %>%
+#    mapview()
 ```
 ```{r}
-b <- a %>%
-  ungroup() %>%
-  group_by(id_pe) %>%
-  summarise(div=n())
+#b <- a %>%
+#  ungroup() %>%
+#  group_by(id_pe) %>%
+#  summarise(div=n())
 ```
 
 ```{r}
-b %>% mapview(zcol="div")
+#b %>% mapview(zcol="div")
 ```
    
 
