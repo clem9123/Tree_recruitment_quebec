@@ -2,7 +2,7 @@
 title : "Exploration des données"
 author : "Clémentine"
 date : "02/02/2023"
-output: html_document
+output: github_document
 ---
 
 ```{r, setup, include=FALSE}
