@@ -16,6 +16,7 @@ library(mapview)
 library(dplyr)
 library(ggplot2)
 library(lme4)
+library(lubridate)
 ```
 
 ## 1. Les données
@@ -439,27 +440,159 @@ Comment étudier le déplacement géographique des différentes espèces ?
 #b %>% mapview(zcol="div")
 ```
    
+## 7. Regeneration et peuplement
 
+Calcul du recrutement dans les différentes parcelles pour les différentes essences
+Recrutement : etat = 40, 42, 44 ou 46
+Nombre de recrues par parcelle et par essence
 
+```{r}
+recrutement <- tree_mes_xy %>%
+    filter(etat %in% c(40, 42, 44, 46)) %>%
+    group_by(id_pe, essence, no_mes) %>%
+    summarize(recrutement = n()) %>%
+    ungroup()
+```
 
+Nombre d'espèces recrutés par parcelle
 
+```{r}
+div_recrutement <- recrutement %>%
+    group_by(id_pe, no_mes) %>%
+    summarize(diversity = n())
+```
 
+```{r}
+ div_recrutement %>%
+    mapview(zcol = "diversity")
+```
 
+```{r}
+recrutement_plus <- merge(data.frame(recrutement), data.frame(pep_mes_xy))
+```
 
+carte des recrutements pour la premiière version d'inventaire : "1er inv. 1975 à 1981"
+pour acer rubrum
 
+```{r}
+recrutement_plus %>%
+    filter(version == "1er inv. 1975 à 1981") %>%
+    filter(essence == "ERR") %>%
+    mapview(zcol = "recrutement")
+```
 
+```{r}
+recrutement %>%
+    filter(no_mes == 2, essence == "ERR") %>%
+    mapview(zcol = "recrutement")
+recrutement %>%
+    filter(no_mes == 3, essence == "ERR") %>%
+    mapview(zcol = "recrutement")
+recrutement %>%
+    filter(no_mes == 4, essence == "ERR") %>%
+    mapview(zcol = "recrutement")
+recrutement %>%
+    filter(no_mes == 5, essence == "ERR") %>%
+    mapview(zcol = "recrutement")
+```
 
+```{r}
+recrutement %>%
+    filter(essence == "ERR") %>%
+    mapview(zcol = "no_mes", cex = "recrutement")
+```
 
+```{r}
+recrutement %>%
+    filter(essence == "FRA") %>%
+    mapview(zcol = "no_mes", cex = "recrutement")
+```
 
+```{r}
+recrutement %>%
+    filter(essence == "SAB") %>%
+    mapview(zcol = "no_mes", cex = "recrutement")
+```
 
+Ajout des infos de placette aux infos d'arbre
+    
+```{r}
+recrutement <- recrutement %>%
+    st_join(pep_mes_xy, by = c("id_pe", "no_mes"))
+```
 
+```{r}
+ggplot(recrutement) +
+    geom_sf(aes(fill = recrutement)) +
+    facet_wrap(~essence)
+```
 
+```{r}
+ggplot(recrutement) +
+    geom_point(aes(x = date_sond, y = recrutement, color = essence))
+```
 
+```{r}
+recrutement_tps <- recrutement %>%
+    mutate(year = year(date_sond)) %>%
+    group_by(essence, year) %>%
+    summarize(recrutement = sum(recrutement), n_plot = n())
+```
 
+```{r}
+important_essence <- c("BOP","EPB","EPN","ERR","ERS","PET","PIG","SAB","NA")
+ggplot(recrutement_tps %>% filter(essence %in% important_essence)) +
+    geom_bar(aes(x = year, y = recrutement / n_plot, fill = essence),
+        stat = "identity", position = "dodge") +
+    facet_wrap(~essence)
 
+# graphe par 10 ans
+ggplot(recrutement_tps %>% filter(essence %in% important_essence)) +
+    geom_bar(aes(x = year, y = recrutement / n_plot, fill = essence),
+        stat = "identity", position = "dodge") +
+    facet_wrap(~essence) +
+    scale_x_continuous(breaks = seq(1970, 2010, 10))
+```
 
+The thing is it depends not only on the number of placette but also on the coordonate of the placette. 
+But I don't know how to take into account the coordonate of the placette in the plot.
+Est ce que les plots sont bien répartis dans l'espace chaque année ?
+Pas du tout, les placettes sont très concentrées chaque année dans un petit espace.
 
+```{r}	
+pep_mes_xy <- pep_mes_xy %>% mutate(year = year(date_sond))
+pep_mes_xy %>% 
+    mapView()
 
+pep_mes_xy %>%
+    filter(year %in% 1970:1979) %>%
+    mapView()
+
+pep_mes_xy %>%
+    filter(year %in% 1980:1989) %>%
+    mapView()
+
+pep_mes_xy %>%
+    filter(year %in% 1990:1999) %>%
+    mapView()
+
+pep_mes_xy %>%
+    filter(year %in% 2000:2009) %>%
+    mapView() #il y a un enorme trou nord ouest
+
+pep_mes_xy %>%
+    filter(year %in% 2010:2019) %>%
+    mapView()
+
+pep_mes_xy %>%
+    filter(year %in% 2019:2029) %>%
+    mapView()
+```
+
+```{r}
+ggplot(tree_mes_xy) +
+    geom_bar(aes(x = essence))
+```
 
 
 
