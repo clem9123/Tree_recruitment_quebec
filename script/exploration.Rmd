@@ -5,6 +5,8 @@ date : "02/02/2023"
 output: github_document
 ---
 
+## 0. Préparation
+
 ```{r setup, include=FALSE}
 knitr::opts_knit$set(root.dir = "../")
 ```
@@ -146,25 +148,18 @@ défauts externes et des indices de la carie dans les arbres"
 
 ## 2. Mise en forme et graphes d'exploration rapide des données
 
-#### Merge entre les données sur les gaules et les données sur les placettes
+### Distribution des espèces (en quantité)
 
-```{r, mise en forme des données, include = FALSE}
-# merge des deux dataframes
-data_sap <- merge(data.frame(sap_xy), data.frame(pep_mes_xy), by = "id_pe_mes")
-# supprimer les colonnes en double
-data_sap <- data_sap[, -c(9, 10, 11)]
-# renommer les colonnes
-colnames(data_sap) <- c("id_pe_mes", "id_pe", "no_mes", "essence",
-    "cl_dhp", "nb_tige", "tige_ha", "st_ha",
-    "version", "dimension", "no_prj_mes", "date_sond", "statut_mes",
-    "ver_pep", "geom")
+```{r}
+ggplot(tree_mes_xy) +
+    geom_bar(aes(x = essence))
 ```
 
 #### Nombre de mesure par parcelle
 
 ```{r}
 # nombre de mesures par parcelle
-ggplot(data_sap %>%
+ggplot(pep_mes_xy %>%
             group_by(id_pe) %>%
             summarise(n_mes = n_distinct(no_mes))) +
     geom_bar(aes(x = n_mes)) +
@@ -439,12 +434,15 @@ Comment étudier le déplacement géographique des différentes espèces ?
 ```{r}
 #b %>% mapview(zcol="div")
 ```
-   
-## 7. Regeneration et peuplement
+
+Pour résumer baisse de la diversité vers le nord (zone boréale moins riches en espèces)
+
+## 7. Recrutement en gros
 
 Calcul du recrutement dans les différentes parcelles pour les différentes essences
 Recrutement : etat = 40, 42, 44 ou 46
-Nombre de recrues par parcelle et par essence
+
+### Nombre de recrues par parcelle et par essence
 
 ```{r}
 recrutement <- tree_mes_xy %>%
@@ -452,34 +450,45 @@ recrutement <- tree_mes_xy %>%
     group_by(id_pe, essence, no_mes) %>%
     summarize(recrutement = n()) %>%
     ungroup()
+recrutement <- recrutement %>%
+    merge(data.frame(pep_mes_xy))
 ```
 
-Nombre d'espèces recrutés par parcelle
+### Nombre d'espèces recrutés par parcelle
 
 ```{r}
 div_recrutement <- recrutement %>%
     group_by(id_pe, no_mes) %>%
     summarize(diversity = n())
-```
-
-```{r}
- div_recrutement %>%
+    #plot
+div_recrutement %>%
     mapview(zcol = "diversity")
 ```
 
-```{r}
-recrutement_plus <- merge(data.frame(recrutement), data.frame(pep_mes_xy))
-```
+### Carte des recrutements 
 
-carte des recrutements pour la premiière version d'inventaire : "1er inv. 1975 à 1981"
-pour acer rubrum
+pour différentes versions d'inventaire 
+(Acer rubrum, erable rouge ERR)
 
 ```{r}
-recrutement_plus %>%
+recrutement %>%
     filter(version == "1er inv. 1975 à 1981") %>%
     filter(essence == "ERR") %>%
     mapview(zcol = "recrutement")
+recrutement %>%
+    filter(version == "3e inv. 1992 à 2004") %>%
+    filter(essence == "ERR") %>%
+    mapview(zcol = "recrutement")
+recrutement %>%
+    filter(version == "5e inv. 2015 et plus") %>%
+    filter(essence == "ERR") %>%
+    mapview(zcol = "recrutement")
 ```
+
+Note : Clairement une necessité de corriger les observation par rapport aux 
+placette inventoriées pendant chaque inventaire
+
+CArte de recrutement par numéro de mesure
 
 ```{r}
 recrutement %>%
@@ -496,30 +505,9 @@ recrutement %>%
     mapview(zcol = "recrutement")
 ```
 
-```{r}
-recrutement %>%
-    filter(essence == "ERR") %>%
-    mapview(zcol = "no_mes", cex = "recrutement")
-```
+Même problème : quelles parcelles ont été inventoriées
 
-```{r}
-recrutement %>%
-    filter(essence == "FRA") %>%
-    mapview(zcol = "no_mes", cex = "recrutement")
-```
-
-```{r}
-recrutement %>%
-    filter(essence == "SAB") %>%
-    mapview(zcol = "no_mes", cex = "recrutement")
-```
-
-Ajout des infos de placette aux infos d'arbre
-    
-```{r}
-recrutement <- recrutement %>%
-    st_join(pep_mes_xy, by = c("id_pe", "no_mes"))
-```
+Carte du recrutement par espèce
 
 ```{r}
 ggplot(recrutement) +
@@ -527,87 +515,103 @@ ggplot(recrutement) +
     facet_wrap(~essence)
 ```
 
-```{r}
-ggplot(recrutement) +
-    geom_point(aes(x = date_sond, y = recrutement, color = essence))
-```
+Note : serait interessant à faire pour certaines espèces seulement (les plus importantes)
+
+### Recrutement par essence et par année
 
 ```{r}
 recrutement_tps <- recrutement %>%
-    mutate(year = year(date_sond)) %>%
     group_by(essence, year) %>%
     summarize(recrutement = sum(recrutement), n_plot = n())
 ```
 
 ```{r}
-important_essence <- c("BOP","EPB","EPN","ERR","ERS","PET","PIG","SAB","NA")
+# Plot pour les essences importantes
+important_essence <- c("BOJ","BOP","EPB","EPN","ERR","ERS","PET","PIG","SAB")
 ggplot(recrutement_tps %>% filter(essence %in% important_essence)) +
     geom_bar(aes(x = year, y = recrutement / n_plot, fill = essence),
         stat = "identity", position = "dodge") +
     facet_wrap(~essence)
-
-# graphe par 10 ans
-ggplot(recrutement_tps %>% filter(essence %in% important_essence)) +
-    geom_bar(aes(x = year, y = recrutement / n_plot, fill = essence),
-        stat = "identity", position = "dodge") +
-    facet_wrap(~essence) +
-    scale_x_continuous(breaks = seq(1970, 2010, 10))
 ```
 
 The thing is it depends not only on the number of placette but also on the coordonate of the placette. 
 But I don't know how to take into account the coordonate of the placette in the plot.
-Est ce que les plots sont bien répartis dans l'espace chaque année ?
-Pas du tout, les placettes sont très concentrées chaque année dans un petit espace.
+De plus les placettes sont très concentrées chaque année dans un petit espace.
+
+### Distribution des placettes échantillonnée par année
 
 ```{r}	
 pep_mes_xy <- pep_mes_xy %>% mutate(year = year(date_sond))
 pep_mes_xy %>% 
     mapView()
-
 pep_mes_xy %>%
     filter(year %in% 1970:1979) %>%
     mapView()
-
 pep_mes_xy %>%
     filter(year %in% 1980:1989) %>%
     mapView()
-
 pep_mes_xy %>%
     filter(year %in% 1990:1999) %>%
     mapView()
-
 pep_mes_xy %>%
     filter(year %in% 2000:2009) %>%
     mapView() #il y a un enorme trou nord ouest
-
 pep_mes_xy %>%
     filter(year %in% 2010:2019) %>%
     mapView()
-
 pep_mes_xy %>%
     filter(year %in% 2019:2029) %>%
     mapView()
 ```
 
+## 8. Recrutement en détail
+
+### Test statistique sur le recrutement
+
+Dejà en présence absence de recrutement par an dans chaque parcelle inventoriées
+
 ```{r}
-ggplot(tree_mes_xy) +
-    geom_bar(aes(x = essence))
+# dans pep_mes_xy ajouter une colonne par essence importante
+# avec 1 si recrutement et 0 sinon (en utilisant les données de recrutement)
+presence_absence <- pep_mes_xy %>%
+    mutate(
+        "ERR" = ifelse(id_pe_mes %in%
+            recrutement[which(recrutement$essence == "ERR"),]$id_pe_mes, 1, 0),
+        "ERS" = ifelse(id_pe_mes %in%
+            recrutement[which(recrutement$essence == "ERS"),]$id_pe_mes, 1, 0),
+        "BOJ" = ifelse(id_pe_mes %in%
+            recrutement[which(recrutement$essence == "BOJ"),]$id_pe_mes, 1, 0),
+        "BOP" = ifelse(id_pe_mes %in%
+            recrutement[which(recrutement$essence == "BOP"),]$id_pe_mes, 1, 0),
+        "EPB" = ifelse(id_pe_mes %in%
+            recrutement[which(recrutement$essence == "EPB"),]$id_pe_mes, 1, 0),
+        "EPN" = ifelse(id_pe_mes %in%
+            recrutement[which(recrutement$essence == "EPN"),]$id_pe_mes, 1, 0),
+        "PET" = ifelse(id_pe_mes %in%
+            recrutement[which(recrutement$essence == "PET"),]$id_pe_mes, 1, 0),
+        "PIG" = ifelse(id_pe_mes %in%
+            recrutement[which(recrutement$essence == "PIG"),]$id_pe_mes, 1, 0),
+        "SAB" = ifelse(id_pe_mes %in%
+            recrutement[which(recrutement$essence == "SAB"),]$id_pe_mes, 1, 0))
+# ajouter une colonne avec des infos sur la placette au moment de la mesue
+presence_absence <- presence_absence %>%
+    merge(data.frame(pep_ori_sond))
 ```
 
+```{r}
+library(glmmTMB)
+zero <- glmmTMB(ERR ~ 1, family = binomial, data = presence_absence)
+year <- glmmTMB(ERR ~ date_sond, family = binomial,
+     data = presence_absence %>% filter(!is.na(type_couv)))
+     ## beaucoup mieux avec les  et positif mais toujours problème experience non équilibrée
+year_couvert <- glmmTMB(ERR ~ year + type_couv,
+     family = binomial, data = presence_absence %>% filter(!is.na(type_couv)))
+year_couvert_lat <- glmmTMB(ERR ~ year + latitude + type_couv,
+     family = binomial, data = presence_absence %>% filter(!is.na(type_couv)))
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+```{r}
+```
 
 
 
