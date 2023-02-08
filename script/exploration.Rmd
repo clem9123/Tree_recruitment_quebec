@@ -19,6 +19,7 @@ library(dplyr)
 library(ggplot2)
 library(lme4)
 library(lubridate)
+library(glmmTMB)
 ```
 
 ## 1. Les données
@@ -58,6 +59,8 @@ Légendes :
 # Import data
 pep_mes_xy <- st_read("data/PEP_GPKG/PEP.gpkg",
     layer = "vue_pe_placette_mes")
+placette <- st_read("data/PEP_GPKG/PEP.gpkg",
+    layer = "placette")
 tree_mes_xy <- st_read("data/PEP_GPKG/PEP.gpkg",
     layer = "vue_pe_dendro_arbres")
 sap_xy <- st_read("data/PEP_GPKG/PEP.gpkg",
@@ -66,8 +69,8 @@ seedling_xy <- st_read("data/PEP_GPKG/PEP.gpkg",
     layer = "vue_pe_station_semis")
 pep_soil_xy <- st_read("data/PEP_GPKG/PEP.gpkg",
     layer = "vue_pe_station_sol")
-pep_ori <- st_read("data/PEP_GPKG/PEP.gpkg",
-    layer = "pee_ori_sond")
+pee_ori_sond = st_read("data/PEP_GPKG/PEP.gpkg",
+        layer = "pee_ori_sond")
 # Encoding for french characters (UTF8 correction)
 pep_pe <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "station_pe")
 for (col in colnames(pep_pe)){
@@ -521,6 +524,7 @@ Note : serait interessant à faire pour certaines espèces seulement (les plus i
 
 ```{r}
 recrutement_tps <- recrutement %>%
+    mutate(year = year(date_sond)) %>%
     group_by(essence, year) %>%
     summarize(recrutement = sum(recrutement), n_plot = n())
 ```
@@ -564,9 +568,7 @@ pep_mes_xy %>%
     mapView()
 ```
 
-## 8. Recrutement en détail
-
-### Test statistique sur le recrutement
+## 8. Test stat sur le recrutement
 
 Dejà en présence absence de recrutement par an dans chaque parcelle inventoriées
 
@@ -595,29 +597,90 @@ presence_absence <- pep_mes_xy %>%
             recrutement[which(recrutement$essence == "SAB"),]$id_pe_mes, 1, 0))
 # ajouter une colonne avec des infos sur la placette au moment de la mesue
 presence_absence <- presence_absence %>%
-    merge(data.frame(pep_ori_sond))
+    merge(data.frame(pee_ori_sond))
 ```
 
 ```{r}
-library(glmmTMB)
 zero <- glmmTMB(ERR ~ 1, family = binomial, data = presence_absence)
 year <- glmmTMB(ERR ~ date_sond, family = binomial,
      data = presence_absence %>% filter(!is.na(type_couv)))
-     ## beaucoup mieux avec les  et positif mais toujours problème experience non équilibrée
+## beaucoup mieux mais toujours problème experience non équilibrée
 year_couvert <- glmmTMB(ERR ~ year + type_couv,
      family = binomial, data = presence_absence %>% filter(!is.na(type_couv)))
 year_couvert_lat <- glmmTMB(ERR ~ year + latitude + type_couv,
      family = binomial, data = presence_absence %>% filter(!is.na(type_couv)))
 ```
 
+## 9. Passage des gaules au recrues
+
 ```{r}
+sap <- sap_xy %>% 
+    group_by(id_pe_mes, id_pe, no_mes, essence) %>%
+    summarise(nb_tige = sum(nb_tige))
+# selectionner les espèces importantes
+sapc <- sap %>% filter(essence %in% important_essence)
 ```
 
+```{r}
+# ajouter une colonne avec les données de recrutement
+# nombre de recrue par placette par espèce par mesure
+# ajouter le nombre de recrue nommé `recrutement` dans le tableau recrutement associée à la placette et à l'essence mais pour la mesure suivante
+# Joindre les deux tables en utilisant la fonction left_join
+sap_recru <- merge(
+    sapc %>% merge(data.frame(pep_mes_xy)) %>%
+        select(id_pe, no_mes, nb_tige, date_sond),
+    data.frame(recrutement %>%
+        rename(no_mes2 = no_mes, date_sond2 = date_sond) %>%
+        select(-id_pe_mes)))
+
+# Filtrer les lignes où les numéros de mesure sont consécutifs
+sap_recru <- sap_recru %>% filter(no_mes2 == no_mes + 1) %>%
+    select(id_pe, essence, nb_tige, recrutement, no_mes,
+        no_mes2, date_sond, date_sond2)
+
+# Ajouter colonne de temps
+sap_recru <- sap_recru %>% mutate(deltaT = date_sond2 - date_sond)
+sap_recru <- sap_recru %>% mutate(deltaY = deltaT / 365)
 
 
+sap_recru <- sap_recru %>%
+    merge(data.frame(pee_ori_sond) %>%
+        select(id_pe, no_mes, type_couv, gr_ess,
+            cl_dens, cl_haut, cl_age, cl_pent,
+            dep_sur, cl_drai, type_eco)) %>%
+    merge(data.frame(placette) %>% select(id_pe, longitude, latitude))
+```
 
+```{r}
+ggplot(sap_recru, aes(x = nb_tige, y = recrutement)) +
+    geom_point()
+```
 
+```{r}
+ggplot(sap_recru, aes(x = deltaT, y = nb_tige, color = recrutement)) +
+    geom_point()
+```
 
+```{r}
+ggplot(sap_recru) +
+    geom_density(aes(x = as.numeric(deltaY)))
+ggplot(sap_recru) +
+    geom_density(aes(x = nb_tige))
+ggplot(sap_recru) +
+    geom_density(aes(x = recrutement))
+```
+
+```{r}
+ggplot(sap_recru) +
+    geom_point(aes(x = nb_tige, y = recrutement))
+```
+
+```{r}
+test_recrutement <- lm(recrutement ~ .,
+    data = data.frame(sap_recru) %>% select(-geometry))
+```
+
+## Note de travail
 
 To do :
     regarder l'évolutioin des gaules numérotées dans le temps (morte "GM",
