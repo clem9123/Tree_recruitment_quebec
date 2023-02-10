@@ -1,0 +1,722 @@
+---
+title : ""
+author : "Clémentine"
+date : "08/02/2023"
+output: html_document
+---
+
+# Objectif
+
+Les objectifs :
+
+- [x] Réduire la zone d'étude à la zone Basalm fir-yellow birch
+- [x] Observer les paramètres de la zone : température, type de couvert, espèces
+dominantes
+- [ ] Etudier les différentes perturbation
+- [ ] Regarder l'évolution des communautés (en particulier les jeunes arbres) après
+perturbation
+- [ ] Etudier le recrutement des arbres au stade de gaule et au stade de recrues
+
+Ce qui pourrait être bien : 
+
+- [ ] réorganiser un peu l'import des data pour que ce soit fait d'un clic
+
+# Librairy and data loading
+
+```{r, library, include=FALSE}
+library(sf)
+library(mapview)
+library(dplyr)
+library(ggplot2)
+library(lme4)
+library(lubridate)
+library(glmmTMB)
+```
+
+
+
+# Préparation des données
+
+```{r, encoding, include = FALSE}
+encoding <- function(df) {
+    for (col in colnames(df)) {
+      if (is.character(df[[col]])) {
+        Encoding(df[[col]]) <- "UTF-8"
+      }
+    }
+    return(df)
+}
+```
+
+```{r, data import, inculde = FALSE}
+zone <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "classi_eco_pe") %>%
+    encoding()
+gaule <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "dendro_gaules") %>%
+    encoding()
+tree <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "dendro_arbres") %>%
+    encoding()
+semis <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "station_semis") %>%
+    encoding()
+perturbation <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "pee_ori_sond") %>%
+    encoding()
+all_placette <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "placette") %>%
+    encoding()
+
+placette_mes <- st_read("data/PEP_GPKG/PEP.gpkg",layer = "placette_mes") %>%
+    encoding()
+station_pe <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "station_pe") %>%
+    encoding()
+station_sol <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "station_sol") %>%
+    encoding()
+
+placette_mes <- merge(placette_mes, station_pe)
+placette_mes <- merge(placette_mes, station_sol, all.x = TRUE)
+placette_mes <- merge(placette_mes, all_placette)
+placette_mes <- placette_mes %>% st_as_sf(sf_column_name = "geom")
+placette_mes <- placette_mes %>% mutate(year = year(date_sond))
+```
+
+## Zone d'étude
+
+Il y a 3117 placettes dans la zone d'étude
+On en retrouve 3090 dans le tableau placette
+
+```{r, echo = FALSE}
+all_placette %>%
+    merge(data.frame(zone)) %>%
+    mapView(zcol = "dom_bio", cex = 3, alpha = 0)
+```
+
+```{r, include = FALSE}
+gaule <- gaule %>%
+    filter(id_pe %in% zone[which(zone$dom_bio == 4),]$id_pe)
+tree <- tree %>%
+    filter(id_pe %in% zone[which(zone$dom_bio == 4),]$id_pe)
+semis <- semis %>%
+    filter(id_pe %in% zone[which(zone$dom_bio == 4),]$id_pe)
+perturbation <- perturbation %>%
+    filter(id_pe %in% zone[which(zone$dom_bio == 4),]$id_pe)
+placette_mes <- placette_mes %>%
+    filter(id_pe %in% zone[which(zone$dom_bio == 4),]$id_pe)
+placette <- all_placette %>%
+    filter(id_pe %in% zone[which(zone$dom_bio == 4),]$id_pe)
+```
+
+## Choix des espèces
+
+Observation des distributions d'espèces dans la zone d'étude,
+pour les gaules, semis et arbre
+
+Distribution des placettes par espèces
+
+```{r}
+gaule %>%
+    ggplot(aes(x = essence)) +
+    geom_bar() +
+    labs(x = "Essence", y = "Nombre de gaules",
+        title = "Distribution des espèces chez les gaules")
+tree %>%
+    ggplot(aes(x = essence)) +
+    geom_bar() +
+    labs(x = "Essence", y = "Nombre d'arbres",
+        title = "Distribution des espèces chez les arbres")
+semis %>%
+    ggplot(aes(x = essence)) +
+    geom_bar() +
+    labs(x = "Essence", y = "Nombre de semis",
+        title = "Distribution des espèces chez les semis")
+```
+
+# Caracteristique des placettes
+
+## Nombre de placette : 3117
+
+```{r}
+length(unique(placette$id_pe))
+```
+
+## Caracteristique géographique
+
+```{r}
+placette %>%
+    mapView()
+```
+
+Il y a un trou au dessus de Quebec (Est-ce que ce serait interessant d'en 
+récuperer les données)
+
+```{r}
+placette %>%
+    ggplot(aes(x = latitude)) +
+    geom_density()
+```
+
+Repartition géographique des placette (longitude et latitude)
+
+```{r}
+placette %>%
+    ggplot() +
+    geom_density(aes(x = latitude))
+placette %>%
+    ggplot() +
+    geom_density(aes(x = longitude))
+```
+
+## Caracteristique topographique
+
+```{r, altitude}
+#altitude
+placette_mes %>%
+    filter(no_mes == 3) %>%
+    mapView(zcol = "altitude", cex = 3, alpha = 0)
+
+placette_mes %>%
+    filter(no_mes == 1) %>%
+    ggplot() +
+    geom_density(aes(x = altitude))
+```
+
+```{r, incinaison pente}
+# pourcentage d'inclinaison de la pente
+placette_mes %>%
+    #filter(no_mes == 3) %>%
+    mapView(zcol = "pc_pent", cex = 3, alpha = 0)
+
+placette_mes %>%
+    ggplot() +
+    geom_density(aes(x = pc_pent))
+
+test <- merge(placette_mes[which(placette_mes$no_mes == 3),],
+    placette_mes[which(placette_mes$no_mes == 4),] %>%
+        rename(pc_pent2 = pc_pent) %>%
+        select(pc_pent2, id_pe) %>% data.frame())
+test <- test %>% select(pc_pent, pc_pent2)
+ggplot(test) +
+    geom_point(aes(x = pc_pent, y = pc_pent2))
+test %>% 
+    mutate(pareil = pc_pent == pc_pent2) %>%
+    mapView(zcol = "pareil")
+```
+
+```{r, classe pente}
+# classe de pente
+placette_mes %>%
+    filter(no_mes == 1) %>%
+    mapView(zcol = "cl_pent", cex = 3, alpha = 0)
+placette_mes %>%
+    filter(no_mes == 2) %>%
+    mapView(zcol = "cl_pent", cex = 3, alpha = 0)
+placette_mes %>%
+    filter(no_mes == 3) %>%
+    mapView(zcol = "cl_pent", cex = 3, alpha = 0)
+
+test <- merge(placette_mes[which(placette_mes$no_mes == 1),],
+    placette_mes[which(placette_mes$no_mes == 2),] %>%
+        rename(cl_pent2 = cl_pent) %>%
+        select(cl_pent2, id_pe) %>% data.frame())
+test <- test %>% select(cl_pent, cl_pent2)
+ggplot(test) +
+    geom_point(aes(x = cl_pent, y = cl_pent2))
+test %>% 
+    mutate(pareil = cl_pent == cl_pent2) %>%
+    mapView(zcol = "pareil")
+```
+
+```{r, exposition}
+# avec geom_sf et patchwork pour avoir les 4 mesures sur le meme
+# graphique
+placette_mes %>%
+    ggplot() +
+    geom_sf(aes(color = exposition)) +
+    labs(title = "Exposition pour les différentes") +
+    facet_grid(rows = "no_mes") +
+    scale_color_gradient(low = "##edf100", high = "#da0202",
+        na.value = "grey50")
+# exposition lors de la mesure 1 et lors de la mesure 2
+test <- merge(placette_mes[which(placette_mes$no_mes == 1),],
+    placette_mes[which(placette_mes$no_mes == 2),] %>%
+        rename(exposition2 = exposition) %>%
+        select(exposition2, id_pe) %>% data.frame())
+test <- test %>% select(exposition, exposition2)
+ggplot(test) +
+    geom_point(aes(x = exposition, y = exposition2,
+        color = (exposition %in% c(45,90,135,180,225,270,315,360))))
+# exposition lors de la mesure 2 pour les placettes ayant une exposition
+# de 90 lors de la mesure 1
+placette_mes %>%
+    filter(
+        id_pe %in% placette_mes[which(placette_mes$no_mes == 1,
+            placette_mes$exposition == 90),]$id_pe,
+        no_mes == 2) %>%
+    mapView(zcol = "exposition")
+```
+
+Observation :
+- altitude : baisse de l'altitude vers l'est (mer XD)
+Les valeurs sont hyper homogène à chaque mesure
+- exposition : pourquoi l'exposition varie entre les mesures ? et en particulier
+pour les mesures à 90 degrès, 180, 45...
+à peut près pour 36%
+- classe de pente : pourquoi la classe de pente varie entre les mesures ?
+à peut près pour 30%
+- pourcentage de pente : varie moins entre les mesures, par contre ce n'est
+pas rempli à chaque mesure
+
+
+
+## Caracteristique du sol
+
+Carte
+
+```{r}
+# depot de surface
+placette_mes %>%
+    mapView(zcol = "dep_sur", cex = 3, alpha = 0)
+placette_mes %>%
+    ggplot() +
+    geom_sf(aes(color = dep_sur)) +
+    facet_wrap(~no_mes)
+test <- merge(placette_mes[which(placette_mes$no_mes == 1),],
+    placette_mes[which(placette_mes$no_mes == 2),] %>%
+        rename(dep_sur2 = dep_sur) %>%
+        select(dep_sur2, id_pe) %>%
+        data.frame())
+test <- test %>% select(dep_sur, dep_sur2)
+ggplot(test) +
+    geom_point(aes(x = dep_sur, y = dep_sur2))
+test %>%
+    mutate(pareil = dep_sur == dep_sur2) %>%
+    mapView(zcol = "pareil")
+# nature dépot
+placette_mes %>%
+    mapView(zcol = "nature_dep", cex = 3, alpha = 0)
+# type d'humus
+placette_mes %>%
+    mapView(zcol = "typehumus", cex = 3, alpha = 0)
+# epaisseur de la matière organique
+placette_mes %>%
+    mapView(zcol = "epmatorg", cex = 3, alpha = 0)
+# echelle de décomposition de la matière organique à 20 cm
+placette_mes %>%
+    mapView(zcol = "decomp20cm", cex = 3, alpha = 0)
+# echelle de décomposition de la matière organique à 60 cm
+placette_mes %>%
+    mapView(zcol = "decomp60cm", cex = 3, alpha = 0)
+# Texture de l'horizon B lors du sondage
+placette_mes %>%
+    mapView(zcol = "textbterr", cex = 3, alpha = 0)
+# texture de l'horizon C lors du sondage
+placette_mes %>%
+    mapView(zcol = "textcterr", cex = 3, alpha = 0)
+# texture de l'horizon B en labo
+placette_mes %>%
+    mapView(zcol = "textblabo", cex = 3, alpha = 0)
+# texture de l'horizon C en labo
+placette_mes %>%
+    mapView(zcol = "textclabo", cex = 3, alpha = 0)
+# pourcentage de pierrosité
+placette_mes %>%
+    mapView(zcol = "pourcpierr", cex = 3, alpha = 0)
+# ph humus
+placette_mes %>%
+    mapView(zcol = "ph_humus", cex = 3, alpha = 0)
+```
+
+Graphe
+
+```{r}
+placette_mes %>%
+    ggplot() +
+    geom_bar(aes(x = dep_sur))
+placette_mes %>%
+    ggplot() +
+    geom_bar(aes(x = nature_dep))
+placette_mes %>%
+    ggplot() +
+    geom_bar(aes(x = typehumus)) +
+    facet_wrap(~no_mes)
+placette_mes %>%
+    ggplot() +
+    geom_density(aes(x = epmatorg))
+placette_mes %>%
+    ggplot() +
+    geom_density(aes(x = pourcpierr))
+```
+
+Observation :
+
+- depot de surface : repartition géographique hétérogène
+26 % de changement entre les mesures 3 et 4
+- nature dépot : majoritairement minéral, un peu organique 
+mais réparti de manière aléatoire sur la zone d'étude 
+(beaucoup de NA au début, peu de variation entre les mesures)
+- type d'humus : bien reparti sur la zone d'étude : à observer !
+- epaisseur de la matière organique : homogène, maj de 0 à 10 cm
+- echelle de décomposition de la matière organique à 20 cm : manque beaucoup
+de données
+- echelle de décomposition de la matière organique à 60 cm : manque beaucoup
+de données
+- Texture des horizons : mieux en labo que sur le terrain (plus de données)
+- pourcentage de pierrosité
+
+Il faudrait faire l'étude des variation entre les mesures pour les variables
+typehumus, epmatorg, pourcpierr, textblabo, textclabo
+
+Sur le sol on a aussi pourcentage d'argile de sable de limon
+
+## Caracteristique écologique
+
+```{r, caracteristique biologique fixe}
+# region écologique
+placette %>%
+    merge(data.frame(zone)) %>%
+    mapView(zcol = "reg_eco", cex = 3, alpha = 0)
+placette %>%
+    merge(data.frame(zone)) %>%
+    ggplot() +
+    geom_bar(aes(x = reg_eco))
+
+# sous region écologique
+placette %>%
+    merge(data.frame(zone)) %>%
+    mapView(zcol = "sreg_eco", cex = 3, alpha = 0)
+placette %>%
+    merge(data.frame(zone)) %>%
+    ggplot() +
+    geom_bar(aes(x = sreg_eco))
+
+# sous domaine bio cimatique
+placette %>%
+    merge(data.frame(zone)) %>%
+    mapView(zcol = "sdom_bio", cex = 3, alpha = 0) 
+placette %>%
+    merge(data.frame(zone)) %>%
+    ggplot() +
+    geom_bar(aes(x = sdom_bio))
+
+# zone de vegetation
+placette %>%
+    merge(data.frame(zone)) %>%
+    mapView(zcol = "zone_veg", cex = 3, alpha = 0)
+
+# sous zone de vegetation
+placette %>%
+    merge(data.frame(zone)) %>%
+    mapView(zcol = "szone_veg", cex = 3, alpha = 0)
+
+# date du dernier sondage
+placette %>%
+    merge(data.frame(zone)) %>%
+    mutate(dern_sond = factor(dern_sond)) %>%
+    mapView(zcol = "dern_sond", cex = 3, alpha = 0)
+placette %>%
+    merge(data.frame(zone)) %>%
+    ggplot() +
+    geom_bar(aes(x = dern_sond))
+
+# unité de paysage régionale
+placette %>%
+    merge(data.frame(zone)) %>%
+    mapView(zcol = "upays_reg", cex = 3, alpha = 0)
+placette %>%
+    merge(data.frame(zone)) %>%
+    ggplot() +
+    geom_bar(aes(x = upays_reg))
+```
+
+Observation :
+
+- region écologique : répartition d'est en ouest
+- zone de vegetation et sous zone de vegetation : RAS
+- sous domaine bio cimatique : 2 zones : est et ouest
+- date du dernier sondage : répartition géographique hétérogène
+- unité de paysage régionale : répartition longitudinale est ouest
+
+```{r}
+# vegetation potentielle
+placette_mes %>%
+    mapView(zcol = "veg_pot", cex = 3, alpha = 0)
+# type ecologique
+placette_mes %>%
+    mapView(zcol = "type_eco", cex = 3, alpha = 0)
+# type couvert
+placette_mes %>%
+    mapView(zcol = "type_couv", cex = 3, alpha = 0)
+placette_mes %>%
+    ggplot() +
+    geom_bar(aes(x = type_couv)) +
+    facet_wrap(~version)
+```
+
+Observation :
+
+- vegetation potentielle : un peu heterogène géographiquement (nord sud ?)
+- type ecologique : même chose que répartition potentielle
+
+Pour le type ecologique et la vegetation potentielle, il y a de plus en plus de
+placettes avec des valeurs non NA
+
+```{r}
+# stade de developpement du peuplement lors du premier programme
+placette_mes %>%
+    mapView(zcol = "stade_dev", cex = 3, alpha = 0)
+placette_mes %>%
+    ggplot() +
+    geom_sf(aes(color = stade_dev)) +
+    facet_grid(rows = vars(no_mes))
+placette_mes %>%
+    merge(data.frame(zone)) %>%
+    ggplot() +
+    geom_bar(aes(x = stade_dev)) +
+    facet_grid(rows = vars(version))
+# physionomie du couvert
+placette_mes %>%
+    filter(year %in% 1970:1981) %>%
+    mapView(zcol = "phys_couv", cex = 3, alpha = 0)
+placette_mes %>%
+    filter(year %in% 1982:1997) %>%
+    mapView(zcol = "phys_couv", cex = 3, alpha = 0)
+placette_mes %>%
+    filter(year %in% 1997:2005) %>%
+    mapView(zcol = "phys_couv", cex = 3, alpha = 0)
+placette_mes %>%
+    filter(year %in% 2005:2018) %>%
+    mapView(zcol = "phys_couv", cex = 3, alpha = 0)
+placette_mes %>%
+    mapView(zcol = "phys_couv", cex = 3, alpha = 0)
+placette_mes %>%
+    ggplot() +
+    geom_bar(aes(x = phys_couv)) +
+    facet_grid(rows = vars(version))
+placette_mes %>%
+    ggplot() +
+    geom_sf(aes(color = phys_couv)) +
+    facet_grid(rows = vars(version))
+placette_mes %>%
+    ggplot() +
+    geom_bar(aes(x = phys_couv))
+placette_mes %>%
+    ggplot() +
+    geom_bar(aes(x = phys_couv)) +
+    facet_wrap(~version)
+```
+
+Observation :
+
+- stade de developpement du peuplement lors du premier programme : surtout MO
+Je ne sais pas ce que ça veut dire
+- physionomie du couvert : surtout AB (Arbustaie), un peu FO (foret)
+(petit bout nord FO seulement) semble changer avec le temps fortement
+de FO vers AB (surtout 5eme inventaire AB)
+
+Essence du couvert
+
+```{r}
+# premiere essence du couvert arborescent
+##############
+placette_mes %>%
+    mapView(zcol = "couv_arbo1", cex = 3, alpha = 0)
+
+placette_mes %>%
+    filter(year %in% 1990:2000) %>%
+    mapView(zcol = "couv_arbo1", cex = 3, alpha = 0)
+placette_mes %>%
+    filter(year %in% 2005:2018) %>%
+    mapView(zcol = "couv_arbo1", cex = 3, alpha = 0)
+# barplot
+placette_mes %>%
+    ggplot() +
+    geom_bar(aes(x = couv_arbo1))
+
+
+
+
+# deuxième essence du couvert arborescent
+##############
+placette_mes %>%
+    mapView(zcol = "couv_arbo2", cex = 3, alpha = 0)
+# barplot
+placette_mes %>%
+    ggplot() +
+    geom_bar(aes(x = couv_arbo2))
+
+# troisième essence du couvert arborescent
+##############
+placette_mes %>%
+    mapView(zcol = "couv_arbo3", cex = 3, alpha = 0)
+# barplot
+placette_mes %>%
+    ggplot() +
+    geom_bar(aes(x = couv_arbo3))
+
+# compostion du couvert arborescent
+##############
+placette_mes %>%
+    #filter(couv_arbo %in% c("EPN","SAB-BOP")) %>%
+    mapView(zcol = "couv_arbo", cex = 3, alpha = 0)
+# 1% des placettes
+data.frame(table(placette_mes$couv_arbo)) %>%
+    filter(Freq > 30) %>%
+    ggplot() +
+    geom_bar(aes(x = Var1, y = Freq), stat = "identity") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+# 10% des placettes
+data.frame(table(placette_mes$couv_arbo)) %>%
+    filter(Freq > 300) %>%
+    ggplot() +
+    geom_bar(aes(x = Var1, y = Freq), stat = "identity")
+```
+
+Observation :
+essence du couvert arborée : seulement à partir de 1990 ou autour
+
+- premiere essence du couvert arborescent : plus de 1% des placettes (**10%**):
+SAB, BOP, EPN, PET, BOJ ERS, ERR,PIG
+- deuxième essence du couvert arborescent : on a en plus sur 1% des placettes
+EPR, HEG, PIB, SAL
+- troisième essence du couvert arborescent : beacoup NA
+- composition du couvert arborescent : couvre au moins 10% des placettes :
+EPN et SAB-BOP
+ce serait interessant de regarder les placettes qui changent de composition
+
+
+```{r}
+# Groupe écologique
+##############
+# Premier groupe écologique élémentaire du groupe d'espèces indicatrices
+placette_mes %>%
+    mapView(zcol = "gr_eco_el1", cex = 3, alpha = 0)
+# Deuxième groupe écologique élémentaire du groupe d'espèces indicatrices
+placette_mes %>%
+    mapView(zcol = "gr_eco_el2", cex = 3, alpha = 0)
+# Troisième groupe écologique élémentaire du groupe d'espèces indicatrices
+placette_mes %>%
+    mapView(zcol = "gr_eco_el3", cex = 3, alpha = 0)
+
+# groupe d'espèce indicatrices
+###############
+placette_mes %>%
+    mapView(zcol = "gresp_indi", cex = 3, alpha = 0)
+# 1% des placettes avec gresp_indi
+data.frame(table(placette_mes$gresp_indi)) %>%
+    filter(Freq > 30) %>%
+    ggplot() +
+    geom_bar(aes(x = Var1, y = Freq), stat = "identity") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+# 10% des placettes avec gresp_indi
+data.frame(table(placette_mes$gresp_indi)) %>%
+    filter(Freq > 300) %>%
+    ggplot() +
+    geom_bar(aes(x = Var1, y = Freq), stat = "identity")
+placette_mes %>%
+    merge(data.frame(zone)) %>%
+    ggplot() +
+    geom_bar(aes(x = gresp_indi))
+placette_mes %>%
+    merge(data.frame(zone)) %>%
+    ggplot() +
+    geom_bar(aes(x = cl_dens))
+```
+
+Observation :
+
+- groupe écologique espèce indicatrice
+- groupe d'espèce indicatrice : Espèce rare !
+CLB (clintonia borelis), ERE (acer spicatum), DIE (Dièreville chèvrefeuille),
+VIC (Viburnum cassinoides), PLS (Pleurozium schreberi), KAA (Kalmia angustifolia)
+
+```{r}
+# classe de densité
+placette_mes %>%
+    mapView(zcol = "cl_dens", cex = 3, alpha = 0)
+
+# je sais pas ce que c'est
+placette %>%
+    merge(data.frame(zone)) %>%
+    mapView(zcol = "eta_veg", cex = 3, alpha = 0)
+placette %>%
+    merge(data.frame(zone)) %>%
+    mapView(zcol = "sreg_etage", cex = 3, alpha = 0)
+placette %>%
+    merge(data.frame(zone)) %>%
+    mapView(zcol = "upays_reg", cex = 3, alpha = 0)
+```
+
+Observation :
+
+- classe de densité : répartition géographique hétérogène 
+(varie avec les mesures)
+- le reste je ne sais pas ce que c'est exactement
+
+## Caracteristique physique (VIDE)
+
+## Caracteristique climatique (VIDE)
+
+
+# Les perturbations
+
+On retrouve origine (perturbation d'origine) et perturb (perturbation partielle)
+dans placette
+
+On retrouve caus_defol (causes de défoliation) dans tree
+
+Et origin (perturbatin d'origine), an_origine (année de la perturbation 
+d'origine), perturb (perturbation partielle), an_perturb (année de la
+perturbation partielle) dans perturbation.
+
+## Les types de perturbations les plus communes
+
+```{r}
+data.frame(table(perturbation$origin)) %>%
+    ggplot() +
+    geom_bar(aes(x = Var1, y = Freq), stat = "identity") +
+    labs(title = "Perturbation d'origine")
+data.frame(table(perturbation$perturb)) %>%
+    ggplot() +
+    geom_bar(aes(x = Var1, y = Freq), stat = "identity")+
+    labs(title = "Perturbation partielle")
+```
+
+Observation :
+
+- perturbation d'origine : CT, CPR, BR, P (ES, FR...)
+- perturbation partielle : **CP**, **EL** (EPC, CJ, CDL...)
+
+avec : CT (coupe totale), CPR (coupe avec protection de la régénération),
+BR (Brulis total), P (Plantation), CP (Coupe partielle), EL (Epidémie légère),
+ES (épidémie grave), CJ (coupe de jardinage)
+
+## Les dates des perturbations
+
+```{r}
+perturbation %>%
+    filter(!is.na(an_origine)) %>%
+    ggplot() +
+    geom_bar(aes(x = an_origine), stat = "count") +
+    # ecrire les années en pivotant
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+perturbation %>%
+    filter(!is.na(an_perturb)) %>%
+    ggplot() +
+    geom_bar(aes(x = an_perturb), stat = "count") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+Observation :
+
+- perturbation d'origine de 1900 à 2018
+- perturbation partielle de 1958 à 2018
+
+## Les causes de défoliation
+
+```{r}
+tree %>%
+    filter(!is.na(caus_defol)) %>%
+    ggplot() +
+    geom_bar(aes(x = caus_defol), stat = "count")
+```
+
+A: cause abiotique, C : Autre cause, D : dépérissement et sénéscence, H : homme 
+et animaux, I : insecte défoliateurs, P : pathologie du tronc
+
+Surtout I et A

@@ -680,6 +680,174 @@ test_recrutement <- lm(recrutement ~ .,
     data = data.frame(sap_recru) %>% select(-geometry))
 ```
 
+### second work part
+
+```{r}
+model <- lm(recrutement ~ nb_tige +  deltaY + type_couv + longitude + date_sond2*latitude,
+    data = sap_recru %>% filter(essence == "ERP"))
+```
+
+Distribution en taile des recrues
+
+```{r}
+ggplot(tree_mes_xy %>%
+        filter(#etat %in% c("40", "42", "44", "46"),
+                essence %in% important_essence)) +
+    geom_density(aes(x = dhp, color = essence))
+ggplot(tree_mes_xy %>%
+        filter(etat %in% c("40", "42", "44", "46"),
+                essence == "PED")) +
+    geom_density(aes(x = dhp))
+```
+
+```{r}
+ggplot(pep_mes_xy) +
+    geom_bar(aes(x=year))
+```
+
+```{r}
+pep_mes_xy %>%
+    filter(year %in% 1970:1981) %>%
+    mapView()
+pep_mes_xy %>%
+    filter(year %in% 2005:2018) %>%
+    mapView()
+```
+
+```{r}
+table(table(pep_mes_xy[which(pep_mes_xy$year %in% 1970:1981),]$id_pe))
+table(table(pep_mes_xy[which(pep_mes_xy$year %in% 2005:2018),]$id_pe))
+
+length(unique(pep_mes_xy[which(pep_mes_xy$year %in% 1970:1981),]$id_pe))
+length(unique(pep_mes_xy[which(pep_mes_xy$year %in% 2005:2018),]$id_pe))
+```
+
+```{r}
+# ERR
+sap_recru %>%
+    filter(essence == "ERR") %>%
+    mapView()
+# ERS
+sap_recru %>%
+    filter(essence == "ERS") %>%
+    mapView()
+# BOJ
+sap_recru %>%
+    filter(essence == "BOJ") %>%
+    mapView()
+# HEG
+sap_recru %>%
+    filter(essence == "HEG") %>%
+    mapView()
+# HEG 1970-1981
+sap_recru %>%
+    mutate(year = year(date_sond)) %>%
+    filter(year %in% 1970:1981, essence == "HEG", nb_tige >1) %>%
+    mapView(cex = "nb_tige")
+# HEG 2005-2018
+sap_recru %>%
+    mutate(year = year(date_sond)) %>%
+    filter(year %in% 2005:2018, essence == "HEG", nb_tige >1) %>%
+    mapView(cex = "nb_tige")
+# HEG recrues 1970-1981
+sap_recru %>%
+    mutate(year = year(date_sond)) %>%
+    filter(year %in% 1970:1981, essence == "HEG", recrutement > 1) %>%
+    mapView(cex = "recrutement")
+# HEG recrues 2005-2018
+sap_recru %>%
+    mutate(year = year(date_sond)) %>%
+    filter(year %in% 2005:2018, essence == "HEG", recrutement > 1) %>%
+    mapView(cex="recrutement")
+# placettes 1970-1981 et 2005-2018
+pep_mes_xy %>%
+    filter(year %in% 1970:1981) %>%
+    mapView()
+pep_mes_xy %>%
+    filter(year %in% 2005:2018) %>%
+    mapView()
+```
+
+```{r}
+# ajouter le nombre d'harbre adulte par hectare à chaque placette et mesure
+
+```
+
+```{r}
+st_sap <- sap_xy %>%
+    filter(essence %in% c("BOJ","BOP","ERR","ERS","HEG","SAB")) %>%
+    group_by(id_pe_mes, essence) %>%
+    summarize(st_ha = sum(st_ha),nb_tige_sap = sum(nb_tige))
+```
+
+```{r}
+st_tree <- tree_mes_xy %>%
+    filter(essence %in% c("BOJ","BOP","ERR","ERS","HEG","SAB")) %>%
+    group_by(id_pe_mes, essence) %>%
+    summarize(st_ha = sum(st_tige), nb_tige_tree = n())
+```
+
+```{r}
+ggplot(sap_recru %>% 
+    filter(essence %in% c("BOJ","BOP","ERR","ERS","HEG","SAB")) %>%
+    mutate(period = ifelse(year(date_sond2) %in% 1970:1981, 2,
+        ifelse(year(date_sond2) %in% 2005:2018, 1, 0))) %>%
+        filter(period != 0)) +
+    geom_bar(aes(x = latitude, y = recrutement, color = factor(period)), stat = "identity") +
+    facet_wrap(~essence)
+
+
+ggplot(sap_recru %>% 
+    filter(essence %in% c("BOJ","BOP","ERR","ERS","HEG","SAB")) %>%
+    mutate(period = ifelse(year(date_sond2) %in% 1970:1981, 2,
+        ifelse(year(date_sond2) %in% 2005:2018, 1, 0))) %>%
+        filter(period != 0)) +
+    geom_sf(aes(color = factor(period)), stat = "identity") +
+    facet_wrap(~essence)
+```
+
+```{r}
+#rename st_ha dans st_sap en st_ha_sap
+st_sap <- st_sap %>% rename(st_ha_sap = st_ha)
+#rename st_ha dans st_tree en st_ha_tree
+st_tree <- st_tree %>% rename(st_ha_tree = st_ha)
+# merge st_sap et st_tree
+st_ha <- merge(data.frame(st_sap), data.frame(st_tree))
+```
+
+```{r}
+st_ha <- st_ha %>%
+    merge(data.frame(pep_mes_xy)) %>%
+    merge(data.frame(placette))
+```
+
+```{r}
+ggplot(st_ha)+
+    geom_point(aes(x = st_ha_sap, y = st_ha_tree)) +
+    facet_wrap(~essence)
+ggplot(st_ha)+
+    geom_point(aes(x = nb_tige_tree, y = nb_tige_sap)) +
+    facet_grid(essence ~ no_mes)
+```
+
+```{r}
+ggplot(st_ha %>% filter(essence == "ERR")) +
+    geom_sf(aes(geometry = geom)) +
+    facet_wrap(~version)
+```
+
+```{r}
+ggplot(st_ha %>% filter(essence == "ERR")) +
+    geom_sf(aes(geometry = geom, color = factor(nb_tige_tree))) +
+    facet_wrap(~version)
+```
+
+```{r}
+ggplot(sap_recru %>% filter(essence=="ERR")) + 
+    geom_point(aes(x=nb_tige, y = recrutement)) +
+    geom_smooth(aes(x=nb_tige, y = recrutement), method = "lm")
+```
+
 ## Note de travail
 
 To do :
