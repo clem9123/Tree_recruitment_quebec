@@ -62,7 +62,7 @@ perturbation <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "pee_ori_sond") %>%
 all_placette <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "placette") %>%
     encoding()
 
-placette_mes <- st_read("data/PEP_GPKG/PEP.gpkg",layer = "placette_mes") %>%
+placette_mes <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "placette_mes") %>%
     encoding()
 station_pe <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "station_pe") %>%
     encoding()
@@ -720,3 +720,15 @@ A: cause abiotique, C : Autre cause, D : dépérissement et sénéscence, H : ho
 et animaux, I : insecte défoliateurs, P : pathologie du tronc
 
 Surtout I et A
+
+## la géographie des perturbations
+
+```{r}
+perturbation %>%
+    filter(!is.na(perturb)) %>%
+    merge(placette) %>%
+    st_as_sf(sf_column_name = "geom") %>%
+    mapView(zcol = "perturb", alpha = 0)
+```
+
+## Les espèces touchées par les perturbations
