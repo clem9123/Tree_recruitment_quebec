@@ -1,9 +1,17 @@
 ---
-title : ""
-author : "Clémentine"
-date : "08/02/2023"
-output: html_document
+title: ''
+author: "Clémentine"
+date: "08/02/2023"
+output:
+  pdf_document: default
+  html_document: default
 ---
+
+# Knit setup
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "../")
+```
 
 # Objectif
 
@@ -13,31 +21,32 @@ Les objectifs :
 - [x] Observer les paramètres de la zone : température, type de couvert, espèces
 dominantes
 - [ ] Etudier les différentes perturbation
+   - [x] Général overview
+   - [ ] Séparer les perturbations par type
+   - [ ] Séparer les perturbation par importance
+   - [ ] Réussir à avoir une vision temporelle ET spatialle en même temps
 - [ ] Regarder l'évolution des communautés (en particulier les jeunes arbres) après
 perturbation
-- [ ] Etudier le recrutement des arbres au stade de gaule et au stade de recrues
+   - [x] Présence ou absence de gaule après perturbation en gros pour les 
+   espèces principales
+   - [ ] Ajouter les recrues
+   - [ ] Ajouter la présence des arbres adultes par espèce
 
 Ce qui pourrait être bien : 
 
 - [ ] réorganiser un peu l'import des data pour que ce soit fait d'un clic
 
-# Librairy and data loading
+# Librairy and data
 
 ```{r, library, include=FALSE}
 library(sf)
 library(mapview)
-library(dplyr)
-library(ggplot2)
+library(tidyverse)
 library(lme4)
 library(lubridate)
 library(glmmTMB)
-```
+library(gganimate)
 
-
-
-# Préparation des données
-
-```{r, encoding, include = FALSE}
 encoding <- function(df) {
     for (col in colnames(df)) {
       if (is.character(df[[col]])) {
@@ -46,9 +55,7 @@ encoding <- function(df) {
     }
     return(df)
 }
-```
 
-```{r, data import, inculde = FALSE}
 zone <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "classi_eco_pe") %>%
     encoding()
 gaule <- st_read("data/PEP_GPKG/PEP.gpkg", layer = "dendro_gaules") %>%
@@ -74,20 +81,7 @@ placette_mes <- merge(placette_mes, station_sol, all.x = TRUE)
 placette_mes <- merge(placette_mes, all_placette)
 placette_mes <- placette_mes %>% st_as_sf(sf_column_name = "geom")
 placette_mes <- placette_mes %>% mutate(year = year(date_sond))
-```
 
-## Zone d'étude
-
-Il y a 3117 placettes dans la zone d'étude
-On en retrouve 3090 dans le tableau placette
-
-```{r, echo = FALSE}
-all_placette %>%
-    merge(data.frame(zone)) %>%
-    mapView(zcol = "dom_bio", cex = 3, alpha = 0)
-```
-
-```{r, include = FALSE}
 gaule <- gaule %>%
     filter(id_pe %in% zone[which(zone$dom_bio == 4),]$id_pe)
 tree <- tree %>%
@@ -100,6 +94,17 @@ placette_mes <- placette_mes %>%
     filter(id_pe %in% zone[which(zone$dom_bio == 4),]$id_pe)
 placette <- all_placette %>%
     filter(id_pe %in% zone[which(zone$dom_bio == 4),]$id_pe)
+```
+
+## Zone d'étude
+
+Il y a 3117 placettes dans la zone d'étude
+On en retrouve 3090 dans le tableau placette
+
+```{r, echo = FALSE}
+all_placette %>%
+    merge(data.frame(zone)) %>%
+    mapView(zcol = "dom_bio", cex = 3, alpha = 0)
 ```
 
 ## Choix des espèces
@@ -186,14 +191,14 @@ placette_mes %>%
     ggplot() +
     geom_density(aes(x = pc_pent))
 
-test <- merge(placette_mes[which(placette_mes$no_mes == 3),],
+test3 <- merge(placette_mes[which(placette_mes$no_mes == 3),],
     placette_mes[which(placette_mes$no_mes == 4),] %>%
         rename(pc_pent2 = pc_pent) %>%
         select(pc_pent2, id_pe) %>% data.frame())
-test <- test %>% select(pc_pent, pc_pent2)
-ggplot(test) +
+test3 <- test3 %>% select(pc_pent, pc_pent2)
+ggplot(test3) +
     geom_point(aes(x = pc_pent, y = pc_pent2))
-test %>% 
+test3 %>% 
     mutate(pareil = pc_pent == pc_pent2) %>%
     mapView(zcol = "pareil")
 ```
@@ -210,14 +215,14 @@ placette_mes %>%
     filter(no_mes == 3) %>%
     mapView(zcol = "cl_pent", cex = 3, alpha = 0)
 
-test <- merge(placette_mes[which(placette_mes$no_mes == 1),],
+test4 <- merge(placette_mes[which(placette_mes$no_mes == 1),],
     placette_mes[which(placette_mes$no_mes == 2),] %>%
         rename(cl_pent2 = cl_pent) %>%
         select(cl_pent2, id_pe) %>% data.frame())
-test <- test %>% select(cl_pent, cl_pent2)
-ggplot(test) +
+test4 <- test4 %>% select(cl_pent, cl_pent2)
+ggplot(test4) +
     geom_point(aes(x = cl_pent, y = cl_pent2))
-test %>% 
+test4 %>% 
     mutate(pareil = cl_pent == cl_pent2) %>%
     mapView(zcol = "pareil")
 ```
@@ -230,15 +235,15 @@ placette_mes %>%
     geom_sf(aes(color = exposition)) +
     labs(title = "Exposition pour les différentes") +
     facet_grid(rows = "no_mes") +
-    scale_color_gradient(low = "##edf100", high = "#da0202",
+    scale_color_gradient(low = "#edf100", high = "#da0202",
         na.value = "grey50")
 # exposition lors de la mesure 1 et lors de la mesure 2
-test <- merge(placette_mes[which(placette_mes$no_mes == 1),],
+test1 <- merge(placette_mes[which(placette_mes$no_mes == 1),],
     placette_mes[which(placette_mes$no_mes == 2),] %>%
         rename(exposition2 = exposition) %>%
         select(exposition2, id_pe) %>% data.frame())
-test <- test %>% select(exposition, exposition2)
-ggplot(test) +
+test1 <- test1 %>% select(exposition, exposition2)
+ggplot(test1) +
     geom_point(aes(x = exposition, y = exposition2,
         color = (exposition %in% c(45,90,135,180,225,270,315,360))))
 # exposition lors de la mesure 2 pour les placettes ayant une exposition
@@ -276,15 +281,15 @@ placette_mes %>%
     ggplot() +
     geom_sf(aes(color = dep_sur)) +
     facet_wrap(~no_mes)
-test <- merge(placette_mes[which(placette_mes$no_mes == 1),],
+test2 <- merge(placette_mes[which(placette_mes$no_mes == 1),],
     placette_mes[which(placette_mes$no_mes == 2),] %>%
         rename(dep_sur2 = dep_sur) %>%
         select(dep_sur2, id_pe) %>%
         data.frame())
-test <- test %>% select(dep_sur, dep_sur2)
-ggplot(test) +
+test2 <- test2 %>% select(dep_sur, dep_sur2)
+ggplot(test2) +
     geom_point(aes(x = dep_sur, y = dep_sur2))
-test %>%
+test2 %>%
     mutate(pareil = dep_sur == dep_sur2) %>%
     mapView(zcol = "pareil")
 # nature dépot
@@ -731,4 +736,114 @@ perturbation %>%
     mapView(zcol = "perturb", alpha = 0)
 ```
 
-## Les espèces touchées par les perturbations
+**!! Problème d'évolution temporelle**
+
+## Evolution temporelle et spatiale des perturbation
+
+Il faut que j'arrive à lire les données de manière plus claire, peut-être
+qu'avec des graphes sous forme de gif ce serait mieux pour voir l'évolution
+temporelle.
+
+```{r}
+anim <- perturbation %>%
+    mutate(simple_perturb = substr(perturb, 1, 1)) %>%
+    filter(!is.na(simple_perturb) &
+        !is.na(an_perturb)) %>%
+    merge(placette) %>% #head()
+    #st_as_sf(sf_column_name = "geom") %>%
+    ggplot() +
+    geom_point(aes(x= longitude, y = latitude, color = simple_perturb),
+        alpha = 0.5) +
+    transition_time(as.numeric(an_perturb))
+anim_save("perturb1.gif", animate(anim, fps = 1, width = 800, height = 400))
+```
+
+```{r}
+unique(perturbation[which(!is.na(perturbation$perturb) &
+    perturbation$an_perturb %in% 1971:2023),]$id_pe) %>%
+    length()
+```
+
+Perturb : 3127 Perturbation dans perturb 
+touchant 1630 placettes différentes dont 789 pendant la période 1971-2021
+
+# Evolution des placettes touchées par les perturbations
+## Données
+
+```{r, new_data}
+sp <- perturbation[which(!is.na(perturbation$perturb) &
+    perturbation$an_perturb %in% 1971:2023),]
+ssp <- sp %>% select(id_pe, perturb, an_perturb) %>% unique()
+
+t <- placette_mes %>%
+    select(id_pe, id_pe_mes, no_mes, year, latitude, longitude) %>%
+    merge(gaule %>% 
+     select(-st_ha, -tige_ha) %>%
+     pivot_wider(names_from = essence, values_from = nb_tige, values_fill = 0),
+        all = TRUE)
+# dans t remplace NA par 0
+t[is.na(t)] <- 0
+# remettre les espèce en une colonne
+t <- t %>%
+    pivot_longer(cols = -c(id_pe, id_pe_mes, no_mes, year, latitude, longitude,
+        cl_dhp, geometry),
+        names_to = "essence", values_to = "nb_tige")
+# pivot wider sur cl_dhp
+t <- t %>%
+    pivot_wider(names_from = "cl_dhp", values_from = "nb_tige", values_fill = 0)
+
+gaule_perturb <- t  %>%
+    select(-`0`) %>%
+    merge(ssp, by = "id_pe", all.x = TRUE) %>%
+    mutate(deltaT = as.numeric(year) - as.numeric(an_perturb)) %>%
+    mutate(deltaT = ifelse(deltaT < 0, NA, deltaT)) %>%
+    rename(cl2 = `002`, cl4 = `004`, cl6 = `006`, cl8 = `008`) %>%
+    mutate(all_cl = cl2 + cl4 + cl6 + cl8) %>%
+    mutate(is_perturb = ifelse(is.na(deltaT),0,1)) %>%
+    mutate(is_gaule = ifelse(all_cl == 0,0,1))
+gaule_perturb_imp <- gaule_perturb %>%
+    filter(essence %in% c("SAB","EPN","BOP","ERR","ERS","BOJ"))
+gaule_perturb_imp <- gaule_perturb_imp %>%
+    mutate(perturb = ifelse(is.na(perturb),
+        "None", perturb))
+```
+
+## Présence ou absence de gaule en fonction des perturbations
+
+```{r}
+ggplot(gaule_perturb_imp) +
+    geom_bar(aes(x = factor(is_gaule), fill = factor(is_perturb))) +
+    facet_wrap(~essence)
+```
+
+```{r}
+ggplot(gaule_perturb_imp) +
+    geom_bar(aes(x = factor(is_perturb)))
+```
+
+```{r}
+ggplot(gaule_perturb_imp %>% filter(!is.na(perturb))) +
+    geom_bar(aes(x = perturb))
+```
+
+Les principales perturbations : 
+EL : épidémie légère
+EPC : coupe pré commerciale
+CP : coupe partielle
+CJ : coupe de jardinage
+CDL : cuope à diamètre limite
+DEG : dégagement de la régénaration naturelle ou de plantation
+
+```{r}
+ggplot(gaule_perturb_imp %>%
+    filter(perturb %in% c("None","EL", "EPC", "CP", "CJ", "CDL", "DEG"))) +
+    geom_bar(aes(x = factor(perturb), group = factor(is_gaule),
+        fill = factor(is_gaule)),
+    position = "fill") +
+    facet_wrap(~essence)
+```
+
+Dans cette partie je ne prends pas en compte les recrues, le temps depuis la 
+perturbation, la présence de l'espèce à l'état d'adulte, la latitude, la 
+longitude.
+Du coup pas d'aspect spatial et temporel.
