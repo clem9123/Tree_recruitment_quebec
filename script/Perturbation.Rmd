@@ -3,7 +3,6 @@ title: ''
 author: "Clémentine"
 date: "08/02/2023"
 output:
-  pdf_document: default
   html_document: default
 ---
 
@@ -22,19 +21,19 @@ Les objectifs :
 dominantes
 - [ ] Etudier les différentes perturbation
    - [x] Général overview
-   - [ ] Séparer les perturbations par type
-   - [ ] Séparer les perturbation par importance
+   - [x] Séparer les perturbations par type
+   - [x] Séparer les perturbation par importance
    - [ ] Réussir à avoir une vision temporelle ET spatialle en même temps
 - [ ] Regarder l'évolution des communautés (en particulier les jeunes arbres) après
 perturbation
    - [x] Présence ou absence de gaule après perturbation en gros pour les 
    espèces principales
-   - [ ] Ajouter les recrues
+   - [x] Ajouter les recrues
    - [ ] Ajouter la présence des arbres adultes par espèce
 
 Ce qui pourrait être bien : 
 
-- [ ] réorganiser un peu l'import des data pour que ce soit fait d'un clic
+- [x] réorganiser un peu l'import des data pour que ce soit fait d'un clic
 
 # Librairy and data
 
@@ -273,7 +272,7 @@ pas rempli à chaque mesure
 
 Carte
 
-```{r}
+```{r, eval = FALSE}
 # depot de surface
 placette_mes %>%
     mapView(zcol = "dep_sur", cex = 3, alpha = 0)
@@ -771,9 +770,8 @@ touchant 1630 placettes différentes dont 789 pendant la période 1971-2021
 ## Données
 
 ```{r, new_data}
-sp <- perturbation[which(!is.na(perturbation$perturb) &
-    perturbation$an_perturb %in% 1971:2023),]
-ssp <- sp %>% select(id_pe, perturb, an_perturb) %>% unique()
+sp <- perturbation[which(perturbation$an_perturb %in% 1971:2023),]
+ssp <- sp %>% select(id_pe, perturb, an_perturb, origine, an_origine) %>% unique()
 
 t <- placette_mes %>%
     select(id_pe, id_pe_mes, no_mes, year, latitude, longitude) %>%
@@ -795,24 +793,45 @@ t <- t %>%
 gaule_perturb <- t  %>%
     select(-`0`) %>%
     merge(ssp, by = "id_pe", all.x = TRUE) %>%
-    mutate(deltaT = as.numeric(year) - as.numeric(an_perturb)) %>%
-    mutate(deltaT = ifelse(deltaT < 0, NA, deltaT)) %>%
+    #mutate(deltaT = as.numeric(year) - as.numeric(an_perturb)) %>%
+    #mutate(deltaT = ifelse(deltaT < 0, NA, deltaT)) %>%
     rename(cl2 = `002`, cl4 = `004`, cl6 = `006`, cl8 = `008`) %>%
     mutate(all_cl = cl2 + cl4 + cl6 + cl8) %>%
-    mutate(is_perturb = ifelse(is.na(deltaT),0,1)) %>%
+    mutate(is_perturb = ifelse(is.na(origine) & is.na(perturb),FALSE, TRUE)) %>%
     mutate(is_gaule = ifelse(all_cl == 0,0,1))
+
+## PERTURBATION D'ORIGINE
+gaule_perturb <- gaule_perturb %>%
+  mutate(ptotale = case_when(origine == "BR" ~ "burn",
+                                  origine %in% c("CBA", "CBT", "CDV", "CPH", "CPR", "CPT", "CRB", "CRS", "CS", "CT", "ETR", "RPS") ~ "logging",
+                                  origine %in% c("CHT","DT") ~ "windfall", # DT = dépérissement
+                                  origine %in% c("P", "PLN", "PLR", "ENS") ~ "plantation",
+                                  origine == "ES" ~ "severe_outbreak",
+                                  origine == "FR" ~ "wasteland"))
+                                  #is.na(origine) ~ "None"))
+gaule_perturb$ptotale <- as.factor(gaule_perturb$ptotale)
+
+## PERTURBATION PARTIELLE
+gaule_perturb <- gaule_perturb %>%
+  mutate(ppartielle = case_when(perturb == "BRP" ~ "partial_burn",
+                                  perturb %in% c("CA", "CAM", "CB","CD","CDL","CE", "CEA", "CIP", "CJ", "CJG", "CJP", "CJT", "CP", 'CPC', "CPF", "CPI", "CPM", "CPS", "CPX", "CTR", "DEG", "DLD", "DRM", "EC", "ECE", "EPC", "ESI", "PCP") ~
+                                "partial_logging",
+                                perturb == "EL" ~ "light_outbreak",
+                                perturb %in% c("CHP", "VEP", "DP") ~ "partial_windfall", # DP = dépérissement
+                                perturb %in% c("ENR", "RR",  "RRG") ~ "partial_plantation")) 
+gaule_perturb$ppartielle <- as.factor(gaule_perturb$ppartielle)
+
+
+
 gaule_perturb_imp <- gaule_perturb %>%
     filter(essence %in% c("SAB","EPN","BOP","ERR","ERS","BOJ"))
-gaule_perturb_imp <- gaule_perturb_imp %>%
-    mutate(perturb = ifelse(is.na(perturb),
-        "None", perturb))
 ```
 
 ## Présence ou absence de gaule en fonction des perturbations
 
 ```{r}
 ggplot(gaule_perturb_imp) +
-    geom_bar(aes(x = factor(is_gaule), fill = factor(is_perturb))) +
+    geom_bar(aes(x = factor(is_perturb), fill = factor(is_gaule))) +
     facet_wrap(~essence)
 ```
 
@@ -822,8 +841,14 @@ ggplot(gaule_perturb_imp) +
 ```
 
 ```{r}
+ggplot(gaule_perturb_imp %>% filter(!is.na(ppartielle))) +
+    geom_bar(aes(x = ppartielle))
+ggplot(gaule_perturb_imp %>% filter(!is.na(ptotale))) +
+    geom_bar(aes(x = ptotale))
 ggplot(gaule_perturb_imp %>% filter(!is.na(perturb))) +
     geom_bar(aes(x = perturb))
+ggplot(gaule_perturb_imp %>% filter(!is.na(origine))) +
+    geom_bar(aes(x = origine))
 ```
 
 Les principales perturbations : 
@@ -834,10 +859,24 @@ CJ : coupe de jardinage
 CDL : cuope à diamètre limite
 DEG : dégagement de la régénaration naturelle ou de plantation
 
+Peut-être revoir les séparation de perturbation (exemple CT et CPR)
+
 ```{r}
 ggplot(gaule_perturb_imp %>%
     filter(perturb %in% c("None","EL", "EPC", "CP", "CJ", "CDL", "DEG"))) +
     geom_bar(aes(x = factor(perturb), group = factor(is_gaule),
+        fill = factor(is_gaule)),
+    position = "fill") +
+    facet_wrap(~essence)
+
+ggplot(gaule_perturb_imp) +
+    geom_bar(aes(x = ppartielle, group = factor(is_gaule),
+        fill = factor(is_gaule)),
+    position = "fill") +
+    facet_wrap(~essence)
+
+ggplot(gaule_perturb_imp) +
+    geom_bar(aes(x = ptotale, group = factor(is_gaule),
         fill = factor(is_gaule)),
     position = "fill") +
     facet_wrap(~essence)
@@ -847,3 +886,100 @@ Dans cette partie je ne prends pas en compte les recrues, le temps depuis la
 perturbation, la présence de l'espèce à l'état d'adulte, la latitude, la 
 longitude.
 Du coup pas d'aspect spatial et temporel.
+Très limité.
+
+Pour ajouter un mini aspect temporel, je fais deux groupe temporel, 1970-1981 et
+2005-2018
+
+```{r}
+ggplot(gaule_perturb_imp %>%
+    mutate(periode = ifelse(year %in% 1970:1981, "1970-1981", 
+        ifelse(year %in% 2005:2018, "2005-2018", NA))) %>%
+    filter(perturb %in% c("None","EL", "EPC", "CP", "CJ", "CDL", "DEG") &
+        !is.na(periode))) +
+    geom_bar(aes(x = factor(perturb), group = factor(is_gaule),
+        fill = factor(is_gaule)),
+    position = "fill") +
+    facet_grid(essence ~ periode)
+
+ggplot(gaule_perturb_imp %>%
+    mutate(periode = ifelse(year %in% 1970:1981, "1970-1981", 
+        ifelse(year %in% 2005:2018, "2005-2018", NA)))) +
+    geom_bar(aes(x = ppartielle, group = factor(is_gaule),
+        fill = factor(is_gaule)),
+    position = "fill") +
+    facet_grid(essence ~ periode)
+
+ggplot(gaule_perturb_imp %>%
+    mutate(periode = ifelse(year %in% 1970:1981, "1970-1981", 
+        ifelse(year %in% 2005:2018, "2005-2018", NA)))) +
+    geom_bar(aes(x = ptotale, group = factor(is_gaule),
+        fill = factor(is_gaule)),
+    position = "fill") +
+    facet_grid(essence ~ periode)
+```
+
+Observer le nombre de plot avec des gaules en fonction de la latitude
+
+```{r}
+ggplot(gaule_perturb_imp %>%
+    mutate(periode = ifelse(year %in% 1970:1981, "1970-1981", 
+        ifelse(year %in% 2005:2018, "2005-2018", NA))) %>%
+    filter(!is.na(periode))) +
+    geom_density(aes(x = latitude, color = factor(is_gaule))) +
+    facet_grid(periode ~ essence)
+```
+
+~ Fait dans l'article 3
+
+```{r}
+ggplot(gaule_perturb_imp %>%
+    mutate(periode = ifelse(year %in% 1970:1981, "1970-1981", 
+        ifelse(year %in% 2005:2018, "2005-2018", NA))) %>%
+    filter(!is.na(periode) & is_gaule == 1)) +
+    geom_density(aes(x = latitude, color = periode)) +
+    facet_wrap(~essence)
+```
+
+C'est une densité donc la somme = 1, donc pas de comparaison possible en Nombre
+de plot, seulement les moyennes.
+
+```{r}
+ggplot(gaule_perturb_imp %>%
+    mutate(periode = ifelse(year %in% 1970:1981, "1970-1981",
+        ifelse(year %in% 2005:2018, "2005-2018", NA))) %>%
+            filter(!is.na(periode) & is_gaule == 1)) +
+    geom_histogram(aes(x = latitude, color = periode)) +
+    facet_grid(is_perturb ~ essence)
+```
+
+```{r}
+ggplot(gaule_perturb_imp %>%
+    mutate(periode = ifelse(year %in% 1970:1981, "1970-1981",
+        ifelse(year %in% 2005:2018, "2005-2018", NA))) %>%
+            filter(!is.na(periode) & is_gaule == 1)) +
+    geom_histogram(aes(x = latitude, color = periode)) +
+    facet_grid(is.na(origine) ~ essence)
+```
+
+Il n'y a peut-être pas de différence de moyenne de latitude entre les deux
+périodes, mais il y a une différence de distribution. Il semble que ce soit
+plus étalée au nord pour la période 2005-2018.
+Eventuellement faire un test de Kolmogorov-Smirnov pour voir si les deux
+distributions sont différentes.
+
+```{r}
+# test de Kolmogorov-Smirnov
+r <- ks.test(gaule_perturb_imp %>%
+    filter(year %in% 1970:1981 & is_gaule == 1) %>%
+    select(latitude) %>%
+    unlist(),
+    gaule_perturb_imp %>%
+    filter(year %in% 2005:2018 & is_gaule == 1) %>%
+    select(latitude) %>%
+    unlist())
+```
+
+Significant difference between the two distributions. (all species together).
+Pareil pour les espèces séparément.
+

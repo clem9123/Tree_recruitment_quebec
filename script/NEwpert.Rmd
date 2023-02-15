@@ -1,0 +1,32 @@
+---
+title: ''
+author: "Clémentine"
+date: "14/02/2023"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "../")
+```
+
+```{r, import, include=FALSE}
+source("script/import.R")
+```
+
+Rapport entre le nombre d'arbres adultes et le nombre de gaules
+
+```{r}
+ggplot(data_perturb %>% filter(essence %in% essence_imp)) +
+    geom_bar(aes(x = is_gaule, group = is_adult, fill = is_adult)) +
+    facet_wrap(~ essence)
+```
+
+```{r}
+ggplot(data_perturb) +
+  geom_point(aes(x = year, y = an_perturb))
+```
+
+```{r}
+plot(1,1)
+```
