@@ -89,15 +89,82 @@ all_gaule <- all_gaule %>%
     mutate(all_cl = cl2 + cl4 + cl6 + cl8)
 
 # CREATE PERTURBATION DATA
-# il n'y a que des perturbations dont on connait la date
-perturbation <- perturbation %>%
-    filter(an_perturb %in% 1971:2023 | an_origine %in% 1971:2023) %>%
-    select(id_pe, no_mes, perturb, an_perturb, origine, an_origine) %>%
-    unique()
 
-## perturbation d'origine
-perturbation <- perturbation %>%
-  mutate(ptotale = case_when(
+# Placette et année avant mesure
+an_mesure <- placette_mes %>% select(id_pe, no_mes, year) %>% data.frame() %>%
+    pivot_wider(names_from = no_mes, values_from = year) %>% data_frame ()
+colnames(an_mesure) <- c("id_pe","geom", "m1", "m2", "m3", "m4", "m5", "m6", "m7")
+an_mesure <- an_mesure %>% mutate(
+        "1-2" = ifelse(is.na(m1) | is.na(m2), "NA",list(m1:m2)),
+        "2-3" = ifelse(is.na(m2) | is.na(m3), "NA",list(m2:m3)),
+        "3-4" = ifelse(is.na(m3) | is.na(m4), "NA",list(m3:m4)),
+        "4-5" = ifelse(is.na(m4) | is.na(m5), "NA",list(m4:m5)),
+        "5-6" = ifelse(is.na(m5) | is.na(m6), "NA",list(m5:m6)),
+        "6-7" = ifelse(is.na(m6) | is.na(m7), "NA",list(m6:m7)))
+
+# recreat the mutate above with a loop
+for(i in 1:nrow(an_mesure)){
+    if(is.na(an_mesure[i,]$m1) | is.na(an_mesure[i,]$m2)){
+        print("ok")
+    } else {
+        print("ouf")
+        an_mesure[i,]$m12 <- list(an_mesure[i,]$m1:an_mesure[i,]$m2)
+        prin("2ouf")
+    }
+    if(is.na(an_mesure[i,]$m2) | is.na(an_mesure[i,]$m3)){
+        an_mesure[i,]$`2-3` <- "NA"
+    } else {
+        an_mesure[i,]$`2-3` <- list(an_mesure[i,]$m2:an_mesure[i,]$m3)
+    }
+    if(is.na(an_mesure[i,]$m3) | is.na(an_mesure[i,]$m4)){
+        an_mesure[i,]$`3-4` <- "NA"
+    } else {
+        an_mesure[i,]$`3-4` <- list(an_mesure[i,]$m3:an_mesure[i,]$m4)
+    }
+    if(is.na(an_mesure[i,]$m4) | is.na(an_mesure[i,]$m5)){
+        an_mesure[i,]$`4-5` <- "NA"
+    } else {
+        an_mesure[i,]$`4-5` <- list(an_mesure[i,]$m4:an_mesure[i,]$m5)
+    }
+    if(is.na(an_mesure[i,]$m5) | is.na(an_mesure[i,]$m6)){
+        an_mesure[i,]$`5-6` <- "NA"
+    } else {
+        an_mesure[i,]$`5-6` <- list(an_mesure[i,]$m5:an_mesure[i,]$m6)
+    }
+    if(is.na(an_mesure[i,]$m6) | is.na(an_mesure[i,]$m7)){
+        an_mesure[i,]$`6-7` <- "NA"
+    } else {
+        an_mesure[i,]$`6-7` <- list(an_mesure[i,]$m6:an_mesure[i,]$m7)
+    }
+}
+
+an_mesure <- an_mesure %>% select (id_pe,"1-2","2-3","3-4","4-5","5-6","6-7")
+colnames(an_mesure) = c("id_pe", "2", "3", "4", "5", "6", "7")
+an_mesure <- an_mesure %>%
+    pivot_longer(cols = c("2", "3", "4", "5", "6", "7"),
+    names_to = "no_mes", values_to = "year") %>%
+    unnest(cols = year) %>%
+    mutate(year = as.numeric(year)) %>%
+    filter(year != 0) %>%
+    data.frame()
+
+# il n'y a que des perturbations dont on connait la date
+
+p_partielle <- perturbation %>% select(id_pe, perturb, an_perturb) %>%
+    na.omit() %>%
+    unique() %>%
+    rename(year = an_perturb)
+p_totale <- perturbation %>% select(id_pe, origine, an_origine) %>%
+    na.omit() %>%
+    unique() %>%
+    rename(year = an_origine)
+
+p_partielle <- merge(p_partielle, an_mesure, full.x = TRUE) %>% unique()
+p_totale <- merge(p_totale, an_mesure, full.x = TRUE) %>% unique()
+
+## type perturbation totale
+p_totale <- p_totale %>%
+  mutate(type = case_when(
     origine == "BR" ~ "burn",
     origine %in% c("CBA", "CBT", "CDV", "CPH", "CPR", "CPT", "CRB", "CRS",
         "CS", "CT", "ETR", "RPS") ~ "logging",
@@ -106,11 +173,11 @@ perturbation <- perturbation %>%
     origine == "ES" ~ "severe_outbreak",
     origine == "FR" ~ "wasteland"))
     #is.na(origine) ~ "None"))
-perturbation$ptotale <- as.factor(perturbation$ptotale)
+p_totale$type <- as.factor(p_totale$type)
 
-## perturbation partielle
-perturbation <- perturbation %>%
-  mutate(ppartielle = case_when(
+## type de perturbation partielle
+p_partielle <- p_partielle %>%
+  mutate(type = case_when(
     perturb == "BRP" ~ "partial_burn",
     perturb %in% c("CA", "CAM", "CB","CD","CDL","CE", "CEA", "CIP", "CJ",
         "CJG", "CJP", "CJT", "CP", "CPC", "CPF", "CPI", "CPM", "CPS", "CPX",
@@ -119,13 +186,22 @@ perturbation <- perturbation %>%
     perturb == "EL" ~ "light_outbreak",
     perturb %in% c("CHP", "VEP", "DP") ~ "partial_windfall", # DP=dépérissement
     perturb %in% c("ENR", "RR",  "RRG") ~ "partial_plantation"))
-perturbation$ppartielle <- as.factor(perturbation$ppartielle)
+p_partielle$type <- as.factor(p_partielle$type)
 
-# MERGE GAULE AND PERTRUBATION
-gaule_perturb <- all_gaule  %>%
-    merge(perturbation, by = "id_pe", all.x = TRUE) %>%
-    mutate(is_perturb = ifelse(is.na(origine) & is.na(perturb),FALSE, TRUE)) %>%
-    mutate(is_gaule = ifelse(all_cl == 0,FALSE,TRUE))
+# récupéré les données geom
+
+p_totale <- p_totale %>%
+    merge(all_placette %>% select(id_pe, latitude, longitude), all.x = TRUE) %>%
+    st_as_sf(sf_column_name = "geom")
+p_partielle <- p_partielle %>%
+    merge(all_placette %>% select(id_pe, latitude, longitude), all.x = TRUE) %>%
+    st_as_sf(sf_column_name = "geom")
+
+# les données des perturbation qu'entre 1970 et 2023
+p_totale <- p_totale %>% filter(year >= 1970 & year <= 2023)%>%
+  mutate(id_pe_mes = paste(id_pe, no_mes, sep = "0"))
+p_partielle <- p_partielle %>% filter(year >= 1970 & year <= 2023)%>%
+  mutate(id_pe_mes = paste(id_pe, no_mes, sep = "0"))
 
 # RECRUES
 recrutement <- tree %>%
@@ -135,38 +211,9 @@ recrutement <- tree %>%
     ungroup()
 
 # MERGE RECRUES AND GAULE
-gaule_perturb_rec <- gaule_perturb %>%
+gaule_rec <- all_gaule %>%
     merge(recrutement, all.x = TRUE) %>%
     mutate(recrutement = ifelse(is.na(recrutement), 0, recrutement))
 
-
-# ARBRE ADULTE
-tree_adult <- tree %>%
-    filter(etat %in% c(10,30,50)) %>%
-    group_by(id_pe, essence, no_mes) %>%
-    summarize(nb_adult = n()) %>%
-    mutate(no_mes = no_mes + 1) %>%
-    ungroup()
-
-# MERGE ARBRE ADULTE AND GAULE
-data_perturb <- gaule_perturb_rec %>%
-    merge(tree_adult, all.x = TRUE) %>%
-    mutate(nb_adult = ifelse(is.na(nb_adult), 0, nb_adult)) %>%
-    mutate(is_adult = ifelse(nb_adult > 0, TRUE, FALSE))
-
-# AJOUTER LES PERIODES
-p1 <- placette_mes[which(placette_mes$year %in% 1970:1981),]$id_pe
-p2 <- placette_mes[which(placette_mes$year %in% 2005:2021),]$id_pe
-
-data_perturb <- data_perturb %>%
-    mutate(periode = case_when(
-        year %in% p1 ~ 1,
-        year %in% p2 ~ 2,
-        TRUE ~ 0)) %>%
-    mutate(is_periode = ifelse(id_pe %in% p2 & id_pe %in% p1, TRUE, FALSE))
-
-# SELECT IMPORTANT SPECIES
-essence_imp <- c("SAB","EPN","BOP","ERR","ERS","BOJ")
-
 # remove all data exept important species and data_perturb
-rm(list = setdiff(ls(), c("data_perturb", "essence_imp")))
+# rm(list = setdiff(ls(), c("gaule_rec", "p_partielle", "p_totale")))

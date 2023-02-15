@@ -10,23 +10,313 @@ output:
 knitr::opts_knit$set(root.dir = "../")
 ```
 
+# Data
+
 ```{r, import, include=FALSE}
 source("script/import.R")
 ```
 
-Rapport entre le nombre d'arbres adultes et le nombre de gaules
+Description :
+
+Tableau gaule_rec :
+
+- id_pe : identifiant de la placette
+- no_mes : numéro de la mesure
+- essence : nom de l'essence
+- id_pe_mes : identifiant de la placette et de la mesure
+- year : année de la mesure
+- latitude : latitude de la placette
+- longitude : longitude de la placette
+- geom : coordonnées de la placette
+- cl4 : classe de tige (40 cm)
+- cl2 : classe de tige (20 cm)
+- cl8 : classe de tige (80 cm)
+- cl6 : classe de tige (60 cm)
+- all_cl : classe de tige (20, 40, 60, 80 cm)
+- recrutement : nombre de recrues
+
+# Objectif
+
+-[ ] Est-ce que les perturbations sont multiples entre chaque mesure ?
+-[ ] Comment utiliser ces multiples perturbations ?
+-[ ] Lien avec le recrutement ?
+
+# Perturbations : redondance
 
 ```{r}
-ggplot(data_perturb %>% filter(essence %in% essence_imp)) +
-    geom_bar(aes(x = is_gaule, group = is_adult, fill = is_adult)) +
-    facet_wrap(~ essence)
+p_totale %>%
+  mapView(zcol = "type", alpha = 0)
+p_partielle %>%
+  mapView(zcol = "type", alpha = 0)
 ```
 
 ```{r}
-ggplot(data_perturb) +
-  geom_point(aes(x = year, y = an_perturb))
+table(table(p_totale$id_pe_mes))
+table(table(p_partielle$id_pe_mes))
+table(table(p_partielle$id_pe))
+table(table(p_totale$id_pe))
 ```
 
 ```{r}
-plot(1,1)
+t <- data.frame(table(p$id_pe_mes)) %>%
+  filter(Freq > 1)
+```
+
+qaund il y a plusieurs perturbation pour la même id_pe_mes je prends la plus recente
+
+```{r}
+pt <- p_totale %>%
+  group_by(id_pe_mes, id_pe) %>%
+  summarise(year = max(year)) %>%
+  ungroup() %>%
+  left_join(data.frame(p_totale))
+
+tt <- data.frame(table(pt$id_pe_mes)) %>%
+  filter(Freq > 1)
+
+pt <- pt %>% filter(!id_pe_mes %in% tt$Var1)
+```
+
+```{r}
+pp <- p_partielle %>%
+  group_by(id_pe_mes, id_pe) %>%
+  summarise(year = max(year)) %>%
+  ungroup() %>%
+  left_join(data.frame(p_partielle))
+
+tp <- data.frame(table(pp$id_pe_mes)) %>%
+  filter(Freq > 1)
+
+pp <- pp %>% filter(!id_pe_mes %in% tp$Var1)
+```
+
+```{r}
+perturbation_rec <- gaule_rec %>%
+  merge (pt %>% data.frame() %>% select(year, id_pe_mes, origine, type) %>%
+    rename(year_pt = year, type_pt = type, pt = origine), all.x = TRUE) %>%
+  merge (pp %>% data.frame() %>% select(year, id_pe_mes, perturb, type) %>%
+    rename(year_pp = year, type_pp = type, pp = perturb), all.x = TRUE)
+
+perturbation_rec <- perturbation_rec %>%
+  mutate(is_gaule = ifelse(all_cl >0, TRUE, FALSE)) %>%
+  mutate(is_perturb = ifelse(is.na(pt) & is.na(pp), 0, ifelse(!is.na(pt), 2,1)))
+```
+
+essence qui m'interesse : "SAB" "EPN" "BOP" "ERR" "ERS" "BOJ"
+
+```{r}
+perturbation_rec %>%
+filter(essence =="SAB") %>%
+  ggplot() +
+  geom_bar(aes(x = is_perturb, fill= is_gaule), position = "fill") +
+  transition_reveal(year)
+
+# SAB
+anim <- perturbation_rec %>%
+  filter(essence =="SAB") %>%
+  ggplot(aes(x = longitude, y = latitude, color = is_gaule)) +
+  geom_point(aes(group=seq_along(year))) +
+  transition_states(year) +
+  shadow_mark() +
+  labs(title = "Year : {closest_state}")
+anim_save("sab_perturb.gif", animate(anim, width = 800, height = 400, fps = 6))
+
+# EPN
+anim <- perturbation_rec %>%
+  filter(essence =="EPN") %>%
+  ggplot(aes(x = longitude, y = latitude, color = is_gaule)) +
+  geom_point(aes(group=seq_along(year))) +
+  transition_states(year) +
+  shadow_mark() +
+  labs(title = "Year : {closest_state}")
+anim_save("epn_perturb.gif", animate(anim, width = 800, height = 400, fps = 6))
+
+# BOP
+anim <- perturbation_rec %>%
+  filter(essence =="BOP") %>%
+  ggplot(aes(x = longitude, y = latitude, color = is_gaule)) +
+  geom_point(aes(group=seq_along(year))) +
+  transition_states(year) +
+  shadow_mark() +
+  labs(title = "Year : {closest_state}")
+anim_save("bop_perturb.gif", animate(anim, width = 800, height = 400, fps = 6))
+
+# ERR
+anim <- perturbation_rec %>%
+  filter(essence =="ERR") %>%
+  ggplot(aes(x = longitude, y = latitude, color = is_gaule)) +
+  geom_point(aes(group=seq_along(year))) +
+  transition_states(year) +
+  shadow_mark() +
+  labs(title = "Year : {closest_state}")
+anim_save("err_perturb.gif", animate(anim, width = 800, height = 400, fps = 6))
+
+# ERS
+anim <- perturbation_rec %>%
+  filter(essence =="ERS") %>%
+  ggplot(aes(x = longitude, y = latitude, color = is_gaule)) +
+  geom_point(aes(group=seq_along(year))) +
+  transition_states(year) +
+  shadow_mark() +
+  labs(title = "Year : {closest_state}")
+anim_save("ers_perturb.gif", animate(anim, width = 800, height = 400, fps = 6))
+
+# BOJ
+anim <- perturbation_rec %>%
+  filter(essence =="BOJ") %>%
+  ggplot(aes(x = longitude, y = latitude, color = is_gaule)) +
+  geom_point(aes(group=seq_along(year))) +
+  transition_states(year) +
+  shadow_mark() +
+  labs(title = "Year : {closest_state}")
+anim_save("boj_perturb.gif", animate(anim, width = 800, height = 400, fps = 6))
+
+# PRP
+anim <- perturbation_rec %>%
+  filter(essence =="PRP") %>%
+  ggplot(aes(x = longitude, y = latitude, color = is_gaule)) +
+  geom_point(aes(group=seq_along(year))) +
+  transition_states(year) +
+  shadow_mark() +
+  labs(title = "Year : {closest_state}")
+anim_save("prp_perturb.gif", animate(anim, width = 800, height = 400, fps = 6))
+
+#ERE
+anim <- perturbation_rec %>%
+  filter(essence =="ERE") %>%
+  ggplot(aes(x = longitude, y = latitude, color = is_gaule)) +
+  geom_point(aes(group=seq_along(year))) +
+  transition_states(year) +
+  shadow_mark() +
+  labs(title = "Year : {closest_state}")
+anim_save("ere_perturb.gif", animate(anim, width = 800, height = 400, fps = 6))
+
+#PET
+anim <- perturbation_rec %>%
+  filter(essence =="PET") %>%
+  ggplot(aes(x = longitude, y = latitude, color = is_gaule)) +
+  geom_point(aes(group=seq_along(year))) +
+  transition_states(year) +
+  shadow_mark() +
+  labs(title = "Year : {closest_state}")
+anim_save("pet_perturb.gif", animate(anim, width = 800, height = 400, fps = 6))
+
+#COC
+anim <- perturbation_rec %>%
+  filter(essence =="COC") %>%
+  ggplot(aes(x = longitude, y = latitude, color = is_gaule)) +
+  geom_point(aes(group=seq_along(year))) +
+  transition_states(year) +
+  shadow_mark() +
+  labs(title = "Year : {closest_state}")
+anim_save("coc_perturb.gif", animate(anim, width = 800, height = 400, fps = 6))
+```
+
+Create a function to make the animated plots for each species
+
+```{r}
+anim_plot <- function(essence){
+  anim <- perturbation_rec %>%
+    filter(essence == essence) %>%
+    ggplot(aes(x = longitude, y = latitude, color = is_gaule)) +
+    geom_point(aes(group=seq_along(year))) +
+    transition_states(year) +
+    shadow_mark() +
+    labs(title = "Year : {closest_state}")
+  anim_save(paste0(essence, "_perturb.gif"), animate(anim, width = 800, height = 400, fps = 6))
+}
+```
+
+Fort joli
+
+Bon maintenant passont il faut lier ceci avec les perturbations
+J'aimerai voir des avant après pour quelques perturbation sur quelques placettes
+
+Déjà test sur une placette :
+Je vais prendre 710060010103 pour l'exemple avec une coupe totale en 1990
+
+```{r}
+ex1 <- perturbation_rec %>%
+  filter(id_pe == "7100600101")
+
+ex1 %>%
+  filter (all_cl != 0) %>%
+  ggplot() +
+  geom_bar(aes(x = factor(year), y = all_cl, fill = essence, group = essence),
+  stat = "identity", position = "dodge")
+```
+
+test sur une autre placette : 710060200103
+avec une epidémie legere en 1992 (et une CPR en 2005)
+
+```{r}
+ex2 <- perturbation_rec %>%
+  filter(id_pe == "7100602001")
+
+ex2 %>%
+  filter (all_cl != 0) %>%
+  ggplot() +
+  geom_bar(aes(x = factor(year), y = all_cl, fill = essence, group = essence),
+  stat = "identity", position = "dodge")
+```
+
+Pour epidemie severe : 710961240103 en 1985
+
+```{r}
+ex3 <- perturbation_rec %>%
+  filter(id_pe == "7109612401")
+
+ex3 %>%
+  filter (all_cl != 0) %>%
+  ggplot() +
+  geom_bar(aes(x = factor(year), y = all_cl, fill = essence, group = essence),
+  stat = "identity", position = "dodge")
+```
+
+severe outbreak pour 9509800201 en 1996
+
+```{r}
+ex4 <- perturbation_rec %>%
+  filter(id_pe == "9509800201")
+
+ex4 %>%
+  filter (all_cl != 0) %>%
+  ggplot() +
+  geom_bar(aes(x = factor(year), y = all_cl, fill = essence, group = essence),
+  stat = "identity", position = "dodge")
+```
+
+severe outbreak pour 7209604201 en 1974
+
+```{r}
+ex5 <- perturbation_rec %>%
+  filter(id_pe == "7209604201")
+
+ex5 %>%
+  filter (all_cl != 0) %>%
+  ggplot() +
+  geom_bar(aes(x = factor(year), y = all_cl, fill = essence, group = essence),
+  stat = "identity", position = "dodge")
+```
+
+CT pour 7100600101 en 1990
+
+```{r}
+ex6 <- perturbation_rec %>%
+  filter(id_pe == "7100600101")
+
+ex6 %>%
+  filter (all_cl != 0) %>%
+  ggplot() +
+  geom_bar(aes(x = factor(year), y = all_cl, fill = essence, group = essence),
+  stat = "identity", position = "dodge")
+```
+
+Mapview des placette de ex1 à ex 6
+
+```{r}
+perturbation_rec %>%
+  st_as_sf(sf_column_name = "geom") %>%
+  filter(id_pe %in% c("7100600101", "7100602001", "7109612401", "9509800201", "7209604201", "7100600101")) %>%
+  mapview()
 ```
