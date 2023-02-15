@@ -20,9 +20,11 @@ and on rare or common species importance)
 
 To do next :
 
-- Observe the effect of perturbation at larger scale with multiple placette 
+-[ ] **Clean the code for perturbation analyses**
+-[ ] **Save the data as worspace to work quicker**
+-[ ] Observe the effect of perturbation at larger scale with multiple placette 
 at the same time
-- Could be great to add the time dimension to this study
+-[ ] Could be great to add the time dimension to this study
 
 Long term but pretty important:
 

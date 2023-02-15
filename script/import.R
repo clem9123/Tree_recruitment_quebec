@@ -94,58 +94,47 @@ all_gaule <- all_gaule %>%
 an_mesure <- placette_mes %>% select(id_pe, no_mes, year) %>% data.frame() %>%
     pivot_wider(names_from = no_mes, values_from = year) %>% data_frame ()
 colnames(an_mesure) <- c("id_pe","geom", "m1", "m2", "m3", "m4", "m5", "m6", "m7")
-an_mesure <- an_mesure %>% mutate(
-        "1-2" = ifelse(is.na(m1) | is.na(m2), "NA",list(m1:m2)),
-        "2-3" = ifelse(is.na(m2) | is.na(m3), "NA",list(m2:m3)),
-        "3-4" = ifelse(is.na(m3) | is.na(m4), "NA",list(m3:m4)),
-        "4-5" = ifelse(is.na(m4) | is.na(m5), "NA",list(m4:m5)),
-        "5-6" = ifelse(is.na(m5) | is.na(m6), "NA",list(m5:m6)),
-        "6-7" = ifelse(is.na(m6) | is.na(m7), "NA",list(m6:m7)))
+
+# create columns m12, m23, m34, m45, m56, m67 with NA
+an_mesure <- an_mesure %>%
+    mutate(m12 = NA, m23 = NA, m34 = NA, m45 = NA, m56 = NA, m67 = NA)
 
 # recreat the mutate above with a loop
 for(i in 1:nrow(an_mesure)){
-    if(is.na(an_mesure[i,]$m1) | is.na(an_mesure[i,]$m2)){
-        print("ok")
-    } else {
-        print("ouf")
-        an_mesure[i,]$m12 <- list(an_mesure[i,]$m1:an_mesure[i,]$m2)
-        prin("2ouf")
+    if(!is.na(an_mesure[i,]$m1) & !is.na(an_mesure[i,]$m2)){
+        an_mesure[i,"m12"] <- toString(list(an_mesure[i,]$m1:an_mesure[i,]$m2)[[1]])
+        #print("yes")
     }
-    if(is.na(an_mesure[i,]$m2) | is.na(an_mesure[i,]$m3)){
-        an_mesure[i,]$`2-3` <- "NA"
-    } else {
-        an_mesure[i,]$`2-3` <- list(an_mesure[i,]$m2:an_mesure[i,]$m3)
+    if(!is.na(an_mesure[i,]$m2) & !is.na(an_mesure[i,]$m3)){
+        an_mesure[i,"m23"] <- toString(list(an_mesure[i,]$m2:an_mesure[i,]$m3)[[1]])
+        #print("yes")
     }
-    if(is.na(an_mesure[i,]$m3) | is.na(an_mesure[i,]$m4)){
-        an_mesure[i,]$`3-4` <- "NA"
-    } else {
-        an_mesure[i,]$`3-4` <- list(an_mesure[i,]$m3:an_mesure[i,]$m4)
+    if(!is.na(an_mesure[i,]$m3) & !is.na(an_mesure[i,]$m4)){
+        an_mesure[i,"m34"] <- toString(list(an_mesure[i,]$m3:an_mesure[i,]$m4)[[1]])
+        #print("yes")
     }
-    if(is.na(an_mesure[i,]$m4) | is.na(an_mesure[i,]$m5)){
-        an_mesure[i,]$`4-5` <- "NA"
-    } else {
-        an_mesure[i,]$`4-5` <- list(an_mesure[i,]$m4:an_mesure[i,]$m5)
+    if(!is.na(an_mesure[i,]$m4) & !is.na(an_mesure[i,]$m5)){
+        an_mesure[i,"m45"] <- toString(list(an_mesure[i,]$m4:an_mesure[i,]$m5)[[1]])
+        #print("yes")
     }
-    if(is.na(an_mesure[i,]$m5) | is.na(an_mesure[i,]$m6)){
-        an_mesure[i,]$`5-6` <- "NA"
-    } else {
-        an_mesure[i,]$`5-6` <- list(an_mesure[i,]$m5:an_mesure[i,]$m6)
+    if(!is.na(an_mesure[i,]$m5) & !is.na(an_mesure[i,]$m6)){
+        an_mesure[i,"m56"] <- toString(list(an_mesure[i,]$m5:an_mesure[i,]$m6)[[1]])
+        #print("yes")
     }
-    if(is.na(an_mesure[i,]$m6) | is.na(an_mesure[i,]$m7)){
-        an_mesure[i,]$`6-7` <- "NA"
-    } else {
-        an_mesure[i,]$`6-7` <- list(an_mesure[i,]$m6:an_mesure[i,]$m7)
+    if(!is.na(an_mesure[i,]$m6) & !is.na(an_mesure[i,]$m7)){
+        an_mesure[i,"m67"] <- toString(list(an_mesure[i,]$m6:an_mesure[i,]$m7)[[1]])
+        #print("yes")
     }
 }
 
-an_mesure <- an_mesure %>% select (id_pe,"1-2","2-3","3-4","4-5","5-6","6-7")
+an_mesure <- an_mesure %>% select (id_pe,"m12","m23","m34","m45","m56","m67")
 colnames(an_mesure) = c("id_pe", "2", "3", "4", "5", "6", "7")
 an_mesure <- an_mesure %>%
     pivot_longer(cols = c("2", "3", "4", "5", "6", "7"),
     names_to = "no_mes", values_to = "year") %>%
+    mutate(year = strsplit(year,", ")) %>%
     unnest(cols = year) %>%
     mutate(year = as.numeric(year)) %>%
-    filter(year != 0) %>%
     data.frame()
 
 # il n'y a que des perturbations dont on connait la date
@@ -159,8 +148,8 @@ p_totale <- perturbation %>% select(id_pe, origine, an_origine) %>%
     unique() %>%
     rename(year = an_origine)
 
-p_partielle <- merge(p_partielle, an_mesure, full.x = TRUE) %>% unique()
-p_totale <- merge(p_totale, an_mesure, full.x = TRUE) %>% unique()
+p_partielle <- merge(p_partielle, an_mesure, full.x = TRUE)
+p_totale <- merge(p_totale, an_mesure, full.x = TRUE)
 
 ## type perturbation totale
 p_totale <- p_totale %>%

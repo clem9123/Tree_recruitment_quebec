@@ -41,11 +41,3 @@ rm(list = setdiff(ls(), c("data_perturb", "essence_imp")))
 ################################################################################
 # ANIMATED PLOTS
 
-anim <- p_totale %>%
-  ggplot() +
-  geom_point(aes(x = longitude, y = latitude, color = type)) +
-  transition_states(year) +
-  ggtitle("{closest_state}",
-          subtitle = "Frame {frame} of {nframes}")
-anim_save("perturb_totale.gif",
-  animate(anim, fps = 10, width = 800, height = 400))
