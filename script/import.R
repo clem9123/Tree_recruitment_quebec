@@ -236,8 +236,31 @@ perturbation_rec <- gaule_rec %>%
 
 perturbation_rec <- perturbation_rec %>%
   mutate(is_gaule = ifelse(all_cl >0, TRUE, FALSE)) %>%
+  mutate(is_recrutement = ifelse(recrutement >0, TRUE, FALSE)) %>%
   mutate(is_perturb = ifelse(is.na(pt) & is.na(pp), 0, ifelse(!is.na(pt), 2,1))) %>%
   st_as_sf(sf_column_name = "geom")
+
+tree_sp = read.csv("data/Tree_sp.csv", header = TRUE, sep = ",") %>% encoding()
+
+perturbation_rec <- perturbation_rec %>%
+    left_join(tree_sp %>% select(code, zone, type, commerciale) %>%
+        rename(essence = code, tree_type = type))
+
+# AJOUT DE LA PRESENCE D'ARBRE ADULTE
+nb_tree <- tree %>%
+    group_by(id_pe_mes,id_pe, no_mes, essence) %>%
+    summarize(st_ha = sum(st_tige), nb_tige_tree = n()) %>%
+    ungroup()
+# merge to perturbation_rec avec deux colonne nb_tige_tree, et is_tree
+# et deux colonne nb_tige_tree_prec et is_tree_prec donnant le nombre de tige
+# et la présence d'arbre adulte pour la mesure précédente
+perturbation_rec <- perturbation_rec %>%
+    left_join(nb_tree, by = c("id_pe_mes", "id_pe", "no_mes", "essence")) %>%
+    mutate(is_tree = !is.na(nb_tige_tree)) %>%
+    left_join(nb_tree %>% mutate(no_mes = as.numeric(no_mes) + 1) %>%
+      rename(nb_tige_tree_prec = nb_tige_tree, st_ha_prec = st_ha),
+      by = c("id_pe_mes", "id_pe", "no_mes", "essence")) %>%
+    mutate(is_tree_prec = !is.na(nb_tige_tree))
 
 # remove all data exept important species and data_perturb
 # rm(list = setdiff(ls(), c("gaule_rec", "p_partielle", "p_totale")))

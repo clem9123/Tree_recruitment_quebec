@@ -16,6 +16,12 @@ knitr::opts_knit$set(root.dir = "../")
 source("script/import.R")
 ```
 
+Choix des espèces qui sont présentez dans les normes d'inventaire
+
+```{r}
+perturbation_rec <- perturbation_rec %>% filter(essence %in% tree_sp$code)
+```
+
 Description :
 
 Tableau gaule_rec :
@@ -174,6 +180,8 @@ Fort joli
 Bon maintenant passont il faut lier ceci avec les perturbations
 J'aimerai voir des avant après pour quelques perturbation sur quelques placettes
 
+## Exemple de placette perturbée, gaules 
+
 Déjà test sur une placette :
 Je vais prendre 710060010103 pour l'exemple avec une coupe totale en 1990
 
@@ -261,4 +269,122 @@ perturbation_rec %>%
   st_as_sf(sf_column_name = "geom") %>%
   filter(id_pe %in% c("7100600101", "7100602001", "7109612401", "9509800201", "7209604201", "7100600101")) %>%
   mapview()
+```
+
+## Something
+
+```{r}
+perturbation_rec %>%
+  filter(is_gaule) %>%
+      ggplot() +
+      geom_bar(aes(group = essence, x = is_gaule, fill = essence),
+        position = "dodge") +
+        facet_wrap(~is_perturb, scales = "free_y")
+```
+
+Ok donc les espèces des gaules d'une placette varient 
+avec les perturbations
+
+Est ce que les types de perturbations sont corrélées à la géographie (hope not)
+
+```{r}
+perturb_geo <- glm(is_perturb >0 ~ longitude + latitude,
+  data = perturbation_rec, family = binomial)
+summary(perturb_geo)
+perturbation_rec %>%
+  filter(essence == "SAB") %>%
+  mutate(is_perturb = as.factor(is_perturb)) %>%
+  mapView(zcol = "is_perturb", alpha = 0, cex = 3)
+```
+
+La présence ou nom d'une perturbation est fortement corrélées à la latitude et la longitude
+Peut être seulement du au fait que la zone étudiée n'est pas totalement homogène
+
+```{r}
+perturbation_rec %>%
+  filter(is_gaule) %>%
+      ggplot() +
+      geom_bar(aes(group = essence, x = is_gaule, fill = essence),
+        position = "dodge") +
+        facet_wrap(~year>2000)
+```
+
+Avant et après 2000 : différence dans la proportion des différentes espèces
+apparaissant au stade de gaulis
+
+le recrutement
+```{r}
+perturbation_rec %>%
+  filter(is_recrutement) %>%
+  ggplot() +
+  geom_bar(aes(group = essence, x = is_recrutement, fill = zone),
+    position = "dodge") +
+    facet_wrap(~is_perturb, scales = "free_y")
+
+perturbation_rec %>%
+  filter(is_recrutement) %>%
+      ggplot() +
+      geom_bar(aes(group = essence, x = is_recrutement, fill = zone),
+        position = "dodge") +
+        facet_wrap(~year>2000)
+# aucun recrutement dans les espèces que je n'ai pas noté
+
+perturbation_rec %>%
+  filter(is_recrutement) %>%
+      ggplot() +
+      geom_bar(aes(x = is_recrutement, fill = zone),
+        position = "fill") +
+        facet_grid(is_perturb~(year>2000))
+
+perturbation_rec %>%
+  filter(is_gaule) %>%
+      ggplot() +
+      geom_bar(aes(x = is_gaule, fill = zone),
+        position = "fill") +
+        facet_grid(is_perturb ~ (year > 2000))
+```
+
+Pour l'instant le problème est qu'il faut que je prenne en compte le nombre de
+placette obsérvée à chaque fois. Pour pouvoir comparer ce que j'essaye de comparer
+
+On dirait qu'au stade de recrues les espèces boréales sont plus présentes avec le 
+temps mais que ce n'est pas le cas au stade de gaulis (pour les perturbation 1 et 2)
+Est ce que ça peut-être du à un décalage temporel ? Ou bien une meilleurs survie
+des espèces boréales ?
+
+Bon c'est très faible de toutes façon pas sure que ce soit significatif
+
+# ajout de la présence des abres adultes
+
+```{r}
+nb_tree <- tree %>%
+    group_by(id_pe_mes,id_pe, no_mes, essence) %>%
+    summarize(st_ha = sum(st_tige), nb_tige_tree = n()) %>%
+    ungroup()
+# merge to perturbation_rec avec deux colonne nb_tige_tree, et is_tree
+# et deux colonne nb_tige_tree_prec et is_tree_prec donnant le nombre de tige
+# et la présence d'arbre adulte pour la mesure précédente
+perturbation_rec <- perturbation_rec %>%
+    left_join(nb_tree, by = c("id_pe_mes", "id_pe", "no_mes", "essence")) %>%
+    mutate(is_tree = !is.na(nb_tige_tree)) %>%
+    left_join(nb_tree %>% mutate(no_mes = no_mes+1) %>%
+      rename(nb_tige_tree_prec = nb_tige_tree, st_ha_prec = st_ha),
+      by = c("id_pe_mes", "id_pe", "no_mes", "essence")) %>%
+    mutate(is_tree_prec = !is.na(nb_tige_tree))
+# renmae les st_ha !!
+```
+
+```{r}
+ggplot(perturbation_rec) +
+  geom_bar(aes(x = is_tree, fill = is_gaule), position = "dodge")
+
+ggplot(perturbation_rec) +
+  geom_bar(aes(x = is_tree_prec, fill = is_gaule), position = "dodge")
+
+ggplot(perturbation_rec) +
+  geom_bar(aes(x = is_tree_prec, fill = is_tree), position = "dodge")
+```
+
+```{r}
+
 ```

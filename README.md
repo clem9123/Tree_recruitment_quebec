@@ -42,7 +42,7 @@ Done :
 - [x] Trying to add the time dimension to this study
 
 Doing :
-- [ ] Add the species I missed out in my tree_species data (put their zone and type)
+- [x] Add the species I missed out in my tree_species data (put their zone and type trop long pour l'instant je ne m'y interesse pas)
 - [ ] indice : % de placette avec au moins un sapling (pour chaque espèce)
 - [ ] indice : % de placette avec au moins une recrue (pour chaque espèce)
 - [ ] mettre en ralation avec la population "locale" précédente (grown trees)
