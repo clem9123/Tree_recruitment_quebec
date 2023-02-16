@@ -257,10 +257,15 @@ nb_tree <- tree %>%
 perturbation_rec <- perturbation_rec %>%
     left_join(nb_tree, by = c("id_pe_mes", "id_pe", "no_mes", "essence")) %>%
     mutate(is_tree = !is.na(nb_tige_tree)) %>%
-    left_join(nb_tree %>% mutate(no_mes = as.numeric(no_mes) + 1) %>%
+    left_join(nb_tree %>% mutate(no_mes = no_mes + 1) %>%
+      select(-id_pe_mes) %>%
       rename(nb_tige_tree_prec = nb_tige_tree, st_ha_prec = st_ha),
-      by = c("id_pe_mes", "id_pe", "no_mes", "essence")) %>%
-    mutate(is_tree_prec = !is.na(nb_tige_tree))
+      by = c("id_pe", "no_mes", "essence")) %>%
+    mutate(is_tree_prec = !is.na(nb_tige_tree_prec))
+# to help deal with number of measure 1
+perturbation_rec <- perturbation_rec %>%
+    mutate(is_tree_prec = ifelse(no_mes == 1, "Unknown", is_tree_prec))
+
 
 # remove all data exept important species and data_perturb
 # rm(list = setdiff(ls(), c("gaule_rec", "p_partielle", "p_totale")))

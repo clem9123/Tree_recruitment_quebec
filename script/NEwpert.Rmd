@@ -357,34 +357,80 @@ Bon c'est très faible de toutes façon pas sure que ce soit significatif
 # ajout de la présence des abres adultes
 
 ```{r}
-nb_tree <- tree %>%
-    group_by(id_pe_mes,id_pe, no_mes, essence) %>%
-    summarize(st_ha = sum(st_tige), nb_tige_tree = n()) %>%
-    ungroup()
-# merge to perturbation_rec avec deux colonne nb_tige_tree, et is_tree
-# et deux colonne nb_tige_tree_prec et is_tree_prec donnant le nombre de tige
-# et la présence d'arbre adulte pour la mesure précédente
-perturbation_rec <- perturbation_rec %>%
-    left_join(nb_tree, by = c("id_pe_mes", "id_pe", "no_mes", "essence")) %>%
-    mutate(is_tree = !is.na(nb_tige_tree)) %>%
-    left_join(nb_tree %>% mutate(no_mes = no_mes+1) %>%
-      rename(nb_tige_tree_prec = nb_tige_tree, st_ha_prec = st_ha),
-      by = c("id_pe_mes", "id_pe", "no_mes", "essence")) %>%
-    mutate(is_tree_prec = !is.na(nb_tige_tree))
+
 # renmae les st_ha !!
 ```
 
 ```{r}
-ggplot(perturbation_rec) +
-  geom_bar(aes(x = is_tree, fill = is_gaule), position = "dodge")
+ggplot(perturbation_rec %>%
+  filter(no_mes != 1)) +
+  geom_bar(aes(x = is_tree, fill = is_gaule), position = "dodge") +
+  ylim(0,5*10**5)
 
-ggplot(perturbation_rec) +
-  geom_bar(aes(x = is_tree_prec, fill = is_gaule), position = "dodge")
+ggplot(perturbation_rec %>%
+  filter(no_mes != 1)) +
+  geom_bar(aes(x = is_tree_prec, fill = is_gaule), position = "dodge") +
+  ylim(0,5*10**5)
 
-ggplot(perturbation_rec) +
+ggplot(perturbation_rec %>%
+  filter(no_mes != 1)) +
+  geom_bar(aes(x = is_tree_prec, fill = is_gaule), position = "fill") +
+  #ylim(0,5*10**5) +
+  facet_wrap(~essence)
+
+ggplot(perturbation_rec %>%
+  filter(no_mes != 1)) +
+  geom_bar(aes(x = is_tree, fill = is_gaule), position = "fill") +
+  #ylim(0,5*10**5) +
+  facet_wrap(~essence)
+
+perturbation_rec %>%
+  ggplot() +
   geom_bar(aes(x = is_tree_prec, fill = is_tree), position = "dodge")
 ```
 
-```{r}
+J'ai l'impression que de très peu is_tree est un peu mieux pour prédire
+la présence de gaule que is_tree_prec
+(A tester en model stat)
 
+```{r}
+model <- glmer(is_gaule ~ is_tree + is_tree_prec + is_perturb + (1|essence),
+  data = perturbation_rec %>% filter(no_mes != 1), family = binomial)
+summary(model)
+
+model_tree <- glmer(is_gaule ~ is_tree + is_perturb + (1|essence),
+  data = perturbation_rec %>% filter(no_mes != 1), family = binomial)
+summary(model_tree)
+
+model_tree_prec <- glmer(is_gaule ~ is_tree_prec + is_perturb + (1|essence),
+  data = perturbation_rec %>% filter(no_mes != 1), family = binomial)
+summary(model_tree_prec)
+
+model_sab <- glm(is_gaule ~ is_tree + is_perturb + is_tree_prec  + year*latitude + longitude,
+  data = perturbation_rec %>% filter(essence == "SAB"), family = binomial)
+summary(model_sab)
+
+anova(model_tree, model_tree_prec)
+```
+
+lien presence de gaule SAB et year + latitude (visualisation)
+
+En fait problème de year : parce que chaque année il n'y a pas le même nombre
+de placette et la même distribution de latitude
+Je sais pas comment on gere ça (punaise il faut vraiment que je progresse en stat !)
+
+Je vais faire des dizaine d'année
+
+```{r}
+# colonne avec la decennie
+perturbation_rec <- perturbation_rec %>%
+  mutate(decennie = floor(year/10)*10)
+
+```
+
+```{r}
+ggplot(data = perturbation_rec %>% filter(essence == "SAB")) +
+  geom_density(aes(x = latitude)) +
+  geom_density(aes(x = latitude, color = factor(is_gaule))) +
+  facet_wrap(~decennie)
 ```

@@ -45,11 +45,9 @@ Doing :
 - [x] Add the species I missed out in my tree_species data (put their zone and type trop long pour l'instant je ne m'y interesse pas)
 - [ ] indice : % de placette avec au moins un sapling (pour chaque espèce)
 - [ ] indice : % de placette avec au moins une recrue (pour chaque espèce)
-- [ ] mettre en ralation avec la population "locale" précédente (grown trees)
+- [x] mettre en ralation avec la population "locale" précédente (grown trees)
 
 To do :
 
-- correct the code for the perturbation
+- [ ] correct the code for the perturbation (en fait il faut plus précisemment définir comment je gere les doubles perturbation)
 - eventually enlarge the study outside the yellow birch forest zone
-
-
