@@ -21,12 +21,35 @@ and on rare or common species importance)
 
 To do next :
 
-- [ ] **Clean the code for perturbation analyses**
-- [ ] **Save the data as worspace to work quicker**
-- [ ] Observe the effect of perturbation at larger scale with multiple placette 
+-  Clean the code for perturbation analyses
+-  Save the data as worspace to work quicker (en fait ça va assez vite)
+-  Observe the effect of perturbation at larger scale with multiple placette 
 at the same time
-- [ ] Could be great to add the time dimension to this study
+-  Could be great to add the time dimension to this study
 
 Long term but pretty important:
 
 - **What is my question ? and how to answer it ?**
+
+16/02/2023
+
+Done :
+
+- [x] Clean the code for perturbation analyses
+- [x] Save the data as worspace to work quicker (en fait ça va assez vite)
+- [x] Observe the effect of perturbation at larger scale with multiple
+   placette at the same time
+- [x] Trying to add the time dimension to this study
+
+Doing :
+
+- [ ] indice : % de placette avec au moins un sapling (pour chaque espèce)
+- [ ] indice : % de placette avec au moins une recrue (pour chaque espèce)
+- [ ] mettre en ralation avec la population "locale" précédente (grown trees)
+
+To do :
+
+- correct the code for the perturbation
+- eventually enlarge the study outside the yellow birch forest zone
+
+

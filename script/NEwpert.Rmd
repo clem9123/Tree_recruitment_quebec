@@ -35,78 +35,23 @@ Tableau gaule_rec :
 - all_cl : classe de tige (20, 40, 60, 80 cm)
 - recrutement : nombre de recrues
 
-# Objectif
+# Objectif / Question
 
--[ ] Est-ce que les perturbations sont multiples entre chaque mesure ?
+-[x] Est-ce que les perturbations sont multiples entre chaque mesure ?
+Pas trop
 -[ ] Comment utiliser ces multiples perturbations ?
--[ ] Lien avec le recrutement ?
+ (pour l'instant choix de la peturbation la plus proche et/ou de la
+plus importantes) J'ai supprimé quand il y en avait 2 en même temps.
+Ce n'est pas ok à long terme mais pour l'instant je vais faire avec.
+-[ ] Lien avec le recrutement ? EN COURS
 
 # Perturbations : redondance
 
-```{r}
-p_totale %>%
-  mapView(zcol = "type", alpha = 0)
-p_partielle %>%
-  mapView(zcol = "type", alpha = 0)
-```
+essence importante : "SAB" "EPN" "BOP" "ERR" "ERS" "BOJ"
 
-```{r}
-table(table(p_totale$id_pe_mes))
-table(table(p_partielle$id_pe_mes))
-table(table(p_partielle$id_pe))
-table(table(p_totale$id_pe))
-```
-
-```{r}
-t <- data.frame(table(p$id_pe_mes)) %>%
-  filter(Freq > 1)
-```
-
-qaund il y a plusieurs perturbation pour la même id_pe_mes je prends la plus recente
-
-```{r}
-pt <- p_totale %>%
-  group_by(id_pe_mes, id_pe) %>%
-  summarise(year = max(year)) %>%
-  ungroup() %>%
-  left_join(data.frame(p_totale))
-
-tt <- data.frame(table(pt$id_pe_mes)) %>%
-  filter(Freq > 1)
-
-pt <- pt %>% filter(!id_pe_mes %in% tt$Var1)
-```
-
-```{r}
-pp <- p_partielle %>%
-  group_by(id_pe_mes, id_pe) %>%
-  summarise(year = max(year)) %>%
-  ungroup() %>%
-  left_join(data.frame(p_partielle))
-
-tp <- data.frame(table(pp$id_pe_mes)) %>%
-  filter(Freq > 1)
-
-pp <- pp %>% filter(!id_pe_mes %in% tp$Var1)
-```
-
-```{r}
-perturbation_rec <- gaule_rec %>%
-  merge (pt %>% data.frame() %>% select(year, id_pe_mes, origine, type) %>%
-    rename(year_pt = year, type_pt = type, pt = origine), all.x = TRUE) %>%
-  merge (pp %>% data.frame() %>% select(year, id_pe_mes, perturb, type) %>%
-    rename(year_pp = year, type_pp = type, pp = perturb), all.x = TRUE)
-
-perturbation_rec <- perturbation_rec %>%
-  mutate(is_gaule = ifelse(all_cl >0, TRUE, FALSE)) %>%
-  mutate(is_perturb = ifelse(is.na(pt) & is.na(pp), 0, ifelse(!is.na(pt), 2,1)))
-```
-
-essence qui m'interesse : "SAB" "EPN" "BOP" "ERR" "ERS" "BOJ"
-
-```{r}
+```{r, gif}
 perturbation_rec %>%
-filter(essence =="SAB") %>%
+filter(essence == "SAB") %>%
   ggplot() +
   geom_bar(aes(x = is_perturb, fill= is_gaule), position = "fill") +
   transition_reveal(year)
@@ -210,11 +155,8 @@ anim <- perturbation_rec %>%
   shadow_mark() +
   labs(title = "Year : {closest_state}")
 anim_save("coc_perturb.gif", animate(anim, width = 800, height = 400, fps = 6))
-```
 
-Create a function to make the animated plots for each species
-
-```{r}
+# long
 anim_plot <- function(essence){
   anim <- perturbation_rec %>%
     filter(essence == essence) %>%

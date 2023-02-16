@@ -88,6 +88,18 @@ all_gaule <- all_gaule %>%
     rename(cl2 = `002`, cl4 = `004`, cl6 = `006`, cl8 = `008`) %>%
     mutate(all_cl = cl2 + cl4 + cl6 + cl8)
 
+# RECRUES
+recrutement <- tree %>%
+    filter(etat %in% c(40, 42, 44, 46)) %>%
+    group_by(id_pe, essence, no_mes) %>%
+    summarize(recrutement = n()) %>%
+    ungroup()
+
+# MERGE RECRUES AND GAULE
+gaule_rec <- all_gaule %>%
+    merge(recrutement, all.x = TRUE) %>%
+    mutate(recrutement = ifelse(is.na(recrutement), 0, recrutement))
+
 # CREATE PERTURBATION DATA
 
 # Placette et année avant mesure
@@ -157,7 +169,7 @@ p_totale <- p_totale %>%
     origine == "BR" ~ "burn",
     origine %in% c("CBA", "CBT", "CDV", "CPH", "CPR", "CPT", "CRB", "CRS",
         "CS", "CT", "ETR", "RPS") ~ "logging",
-    origine %in% c("CHT","DT") ~ "windfall", # DT = dépérissement
+    origine %in% c("CHT","DT") ~ "windfall", # DT: dépérissement
     origine %in% c("P", "PLN", "PLR", "ENS") ~ "plantation",
     origine == "ES" ~ "severe_outbreak",
     origine == "FR" ~ "wasteland"))
@@ -173,7 +185,7 @@ p_partielle <- p_partielle %>%
         "CTR", "DEG", "DLD", "DRM", "EC", "ECE", "EPC", "ESI", "PCP") ~
             "partial_logging",
     perturb == "EL" ~ "light_outbreak",
-    perturb %in% c("CHP", "VEP", "DP") ~ "partial_windfall", # DP=dépérissement
+    perturb %in% c("CHP", "VEP", "DP") ~ "partial_windfall", # DP: dépérissement
     perturb %in% c("ENR", "RR",  "RRG") ~ "partial_plantation"))
 p_partielle$type <- as.factor(p_partielle$type)
 
@@ -192,17 +204,40 @@ p_totale <- p_totale %>% filter(year >= 1970 & year <= 2023)%>%
 p_partielle <- p_partielle %>% filter(year >= 1970 & year <= 2023)%>%
   mutate(id_pe_mes = paste(id_pe, no_mes, sep = "0"))
 
-# RECRUES
-recrutement <- tree %>%
-    filter(etat %in% c(40, 42, 44, 46)) %>%
-    group_by(id_pe, essence, no_mes) %>%
-    summarize(recrutement = n()) %>%
-    ungroup()
+# MERGE PERTURB AND ALL THE REST
+# qaund il y a plusieurs perturbation pour la même id_pe_mes je prends la plus recente
+pt <- p_totale %>%
+  group_by(id_pe_mes, id_pe) %>%
+  summarise(year = max(year)) %>%
+  ungroup() %>%
+  left_join(data.frame(p_totale))
 
-# MERGE RECRUES AND GAULE
-gaule_rec <- all_gaule %>%
-    merge(recrutement, all.x = TRUE) %>%
-    mutate(recrutement = ifelse(is.na(recrutement), 0, recrutement))
+tt <- data.frame(table(pt$id_pe_mes)) %>%
+  filter(Freq > 1)
+
+pt <- pt %>% filter(!id_pe_mes %in% tt$Var1)
+
+pp <- p_partielle %>%
+  group_by(id_pe_mes, id_pe) %>%
+  summarise(year = max(year)) %>%
+  ungroup() %>%
+  left_join(data.frame(p_partielle))
+
+tp <- data.frame(table(pp$id_pe_mes)) %>%
+  filter(Freq > 1)
+
+pp <- pp %>% filter(!id_pe_mes %in% tp$Var1)
+
+perturbation_rec <- gaule_rec %>%
+  merge (pt %>% data.frame() %>% select(year, id_pe_mes, origine, type) %>%
+    rename(year_pt = year, type_pt = type, pt = origine), all.x = TRUE) %>%
+  merge (pp %>% data.frame() %>% select(year, id_pe_mes, perturb, type) %>%
+    rename(year_pp = year, type_pp = type, pp = perturb), all.x = TRUE)
+
+perturbation_rec <- perturbation_rec %>%
+  mutate(is_gaule = ifelse(all_cl >0, TRUE, FALSE)) %>%
+  mutate(is_perturb = ifelse(is.na(pt) & is.na(pp), 0, ifelse(!is.na(pt), 2,1))) %>%
+  st_as_sf(sf_column_name = "geom")
 
 # remove all data exept important species and data_perturb
 # rm(list = setdiff(ls(), c("gaule_rec", "p_partielle", "p_totale")))
