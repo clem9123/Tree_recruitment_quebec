@@ -51,3 +51,7 @@ recrutement <- tree_data %>%
     summarize(recrutement = n()) %>%
     ungroup()
 ```
+
+```{r}
+data_test <- sap_data %>% merge(data.frame(pep_xy) %>% select (-geom), all.x = TRUE) %>% na.omit()
+```
