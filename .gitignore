@@ -12,6 +12,7 @@
 *.rda
 /raw_data
 /data
+/some_data
 
 # microsoft word
 *.doc

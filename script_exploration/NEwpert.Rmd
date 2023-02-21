@@ -13,14 +13,16 @@ knitr::opts_knit$set(root.dir = "../")
 # Data
 
 ```{r, import, include=FALSE}
+essence_imp <- c("SAB", "EPN", "BOP", "ERR", "ERS", "BOJ", "PRP")
 source("script/import.R")
+perturbation_rec <- perturbation_rec %>% filter(essence %in% tree_sp$code)
+perturbation_rec <- perturbation_rec %>%
+  mutate(all_perturb = 
+    ifelse(!is.na(type_pt), as.character(type_pt),
+    ifelse(!is.na(type_pp), as.character(type_pp), "None")))
 ```
 
 Choix des espèces qui sont présentez dans les normes d'inventaire
-
-```{r}
-perturbation_rec <- perturbation_rec %>% filter(essence %in% tree_sp$code)
-```
 
 Description :
 
@@ -49,7 +51,7 @@ Pas trop
  (pour l'instant choix de la peturbation la plus proche et/ou de la
 plus importantes) J'ai supprimé quand il y en avait 2 en même temps.
 Ce n'est pas ok à long terme mais pour l'instant je vais faire avec.
--[ ] Lien avec le recrutement ? EN COURS
+-[x] Lien avec le recrutement ? EN COURS
 
 # Perturbations : redondance
 
@@ -357,11 +359,6 @@ Bon c'est très faible de toutes façon pas sure que ce soit significatif
 # ajout de la présence des abres adultes
 
 ```{r}
-
-# renmae les st_ha !!
-```
-
-```{r}
 ggplot(perturbation_rec %>%
   filter(no_mes != 1)) +
   geom_bar(aes(x = is_tree, fill = is_gaule), position = "dodge") +
@@ -434,3 +431,15 @@ ggplot(data = perturbation_rec %>% filter(essence == "SAB")) +
   geom_density(aes(x = latitude, color = factor(is_gaule))) +
   facet_wrap(~decennie)
 ```
+
+```{r}
+perturbation_rec %>%
+  filter(essence %in% essence_imp) %>%
+  ggplot() +
+  geom_bar(aes(x = all_perturb, fill = is_gaule), position = "fill") +
+  facet_grid(essence~year>2000) +
+  # ecrire les x en verticale
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+View(tree_sp %>% filter(essence %in% essence_imp))

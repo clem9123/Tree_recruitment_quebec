@@ -1,0 +1,53 @@
+---
+title : "Exploration des données triées"
+author : "Clémentine"
+date : "21/O2/2023"
+output: 
+---
+
+# Libraries and data
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# LIBRARY
+library(tidyverse)
+library(lme4)
+library(rgdal)
+library(sf)
+
+# ENCODING FUNCTION FOR UTF8
+encoding <- function(df) {
+    for (col in colnames(df)) {
+      if (is.character(df[[col]])) {
+        Encoding(df[[col]]) <- "UTF-8"
+      }
+    }
+    return(df)
+}
+
+# DATA
+env_data <- readRDS("data/env_data_fev2023.RDS") %>% encoding()
+tree_data <- readRDS("data/tree_data_fev2023.RDS") %>% encoding()
+sap_data <- readRDS("data/sap_data_fev2023.RDS") %>% encoding()
+pep_xy <- st_read("data/pep_xy32198_fev2023.gpkg",
+    layer = "pep_xy32198_fev2023") %>% encoding()
+version_inv <- readRDS("data/version_inv.RDS") %>% encoding()
+```
+
+```{r}
+colnames(env_data)
+colnames(tree_data)
+colnames(sap_data)
+colnames(pep_xy)
+```
+
+```{r}
+recrutement <- tree_data %>%
+    filter(etat %in% c(40, 42, 44, 46)) %>%
+    group_by(id_pe, essence, no_mes) %>%
+    summarize(recrutement = n()) %>%
+    ungroup()
+```

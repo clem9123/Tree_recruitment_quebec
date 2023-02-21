@@ -1,7 +1,7 @@
 # Tree_recruitment_quebec
  Repo for my M2 internship in Montreal IRBV
 
-15/02/2023
+__15/02/2023__
 
 Done : 
 
@@ -29,9 +29,9 @@ at the same time
 
 Long term but pretty important:
 
-- **What is my question ? and how to answer it ?**
+- **What is my questi       on ? and how to answer it ?**
 
-16/02/2023
+__16/02/2023__
 
 Done :
 
@@ -51,3 +51,12 @@ To do :
 
 - [ ] correct the code for the perturbation (en fait il faut plus précisemment définir comment je gere les doubles perturbation)
 - eventually enlarge the study outside the yellow birch forest zone
+
+__21/02/2023__
+
+To do :
+
+- [ ] faire les tableaux de données propre
+   - [ ] Tout faire sauf les perturbations
+- [ ] Ecrire model pour le recrutement
+   - Est-il possible 
