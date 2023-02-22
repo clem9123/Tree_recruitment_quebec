@@ -5,22 +5,22 @@
 # The geopackage containing the PEP data (placette-échantillon permanente) is available online at
 # https://www.donneesquebec.ca/recherche/dataset/placettes-echantillons-permanentes-1970-a-aujourd-hui
 
-download.file("https://diffusion.mffp.gouv.qc.ca/Diffusion/DonneeGratuite/Foret/DONNEES_FOR_ECO_SUD/Placettes_permanentes/PEP_GPKG.zip",
-  destfile = "raw_data/PEP.zip"
-)
+#download.file("https://diffusion.mffp.gouv.qc.ca/Diffusion/DonneeGratuite/Foret/DONNEES_FOR_ECO_SUD/Placettes_permanentes/PEP_GPKG.zip",
+#  destfile = "raw_data/PEP.zip"
+#)
 # database downloaded on February, 1rst 2023
 
-unzip("raw_data/PEP.zip", exdir = "raw_data")
+#unzip("raw_data/PEP.zip", exdir = "raw_data")
 
 # Documentation
 
-download.file("https://diffusion.mffp.gouv.qc.ca/Diffusion/DonneeGratuite/Foret/DONNEES_FOR_ECO_SUD/Placettes_permanentes/1-Documentation/DICTIONNAIRE_PLACETTE.xlsx",
-  destfile = "raw_data/DICTIONNAIRE_PLACETTE.xlsx"
-)
-
-download.file("https://diffusion.mffp.gouv.qc.ca/Diffusion/DonneeGratuite/Foret/DONNEES_FOR_ECO_SUD/Placettes_permanentes/1-Documentation/LISEZ-MOI_pep.pdf",
-  destfile = "raw_data/LISEZ-MOI_pep.pdf"
-)
+#download.file("https://diffusion.mffp.gouv.qc.ca/Diffusion/DonneeGratuite/Foret/DONNEES_FOR_ECO_SUD/Placettes_permanentes/1-Documentation/DICTIONNAIRE_PLACETTE.xlsx",
+#  destfile = "raw_data/DICTIONNAIRE_PLACETTE.xlsx"
+#)
+#
+#download.file("https://diffusion.mffp.gouv.qc.ca/Diffusion/DonneeGratuite/Foret/DONNEES_FOR_ECO_SUD/Placettes_permanentes/1-Documentation/LISEZ-MOI_pep.pdf",
+#  destfile = "raw_data/LISEZ-MOI_pep.pdf"
+#)
 
 # Steps for data cleaning
 # remove trees which dhp < 90mm and gaules
@@ -461,6 +461,6 @@ saveRDS(growth, "data/growth_data_fev2023.RDS")
 saveRDS(sp_mat, "data/sp_mat_abun_fev2023.RDS")
 saveRDS(sp_BA, "data/sp_mat_ba_fev2023.RDS")
 
-saveRDS(version_inv, "data/version_inv.RDS")
+# saveRDS(version_inv, "data/version_inv.RDS")
 
 st_write(pep_xy, "data/pep_xy32198_fev2023.gpkg", layer_options = "OVERWRITE = yes")

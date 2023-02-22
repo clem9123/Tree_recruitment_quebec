@@ -95,3 +95,58 @@ out_test <- jags(
     parameters.to.save = c("p"),
     model.file = model_simple,
 )
+
+model_sab <- function(){
+    # priors
+    a ~ dunif(-1e5, 1e5)
+    b ~ dunif(-1e5, 1e5)
+    c ~ dunif(-1e5, 1e5)
+    # likelihood
+    for (i in 1:n){
+        # presence absence gaule
+        logit(p[i]) <- a + b*deltaT[i] + c*adulte[i]
+        pa[i] ~ dbern(p[i])
+        
+    }
+}
+
+model_simple <- function(){
+    # priors
+    p ~ dunif(0, 1)
+    # likelihood
+    for (i in 1:n){
+        pa[i] ~ dbern(p)
+    }
+}
+
+#10000 premiers
+sap_pert1 <- sap_pert[1:10000,]
+
+jags_data <- list(
+    pa = sap_pert1$presence_gaule,
+    deltaT = sap_pert1$deltaT,
+    adulte = sap_pert1$arbres,
+    n = nrow(sap_pert1)
+)
+
+out_sab <- jags(
+    data = jags_data,
+    n.chains = 3,
+    inits = function(){
+    list(a = runif(1,-500, -200),b =runif(1, -10,10), c = runif(1,1,10))},
+    parameters.to.save = c("a", "b", "c"),
+    model.file = model_sab
+)
+
+out_simple_sab <- jags(
+    data = jags_data,
+    n.chains = 3,
+    inits = function(){
+    list(p = runif(1,0,1))},
+    parameters.to.save = c("p"),
+    model.file = model_simple,
+    n.iter = 10000
+)
+
+traceplot(out_simple_sab, pars = c("p"))
+traceplot(out_sab, pars = c("a", "b", "c"))

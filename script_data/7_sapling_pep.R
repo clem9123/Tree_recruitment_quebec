@@ -9,11 +9,12 @@ library(dplyr)
 ### READ DATA ####
 tree_data <- readRDS("data/tree_data_fev2023.RDS")
 sap_mes <- st_read("raw_data/PEP_GPKG/PEP.gpkg", layer = "DENDRO_GAULES")
+pep_xy <- st_read("data/pep_xy32198_fev2023.gpkg")
 sps_code <- read.csv2("raw_data/ref_spCode.csv")
 
 # Keep only plots kept for tree data
 sap_mes <- sap_mes %>%
-  filter(id_pe %in% tree_data$id_pe)
+  filter(id_pe %in% pep_xy$id_pe)
 
 # Remove NA in sp_code columns (not a tree species)
 sap_mes <- sap_mes %>%
