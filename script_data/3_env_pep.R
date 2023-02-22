@@ -18,8 +18,6 @@ require(dplyr)
 require(tidyr)
 require(data.table)
 
-################ RAJOUTER LA FIN DE PEP_ORI ####################
-
 ## DATA ####
 
 ### Formatted species data with xy coordinates
@@ -75,5 +73,16 @@ age_data <- age_data %>%
 
 env_data <- env_data %>% 
   left_join(age_data, by = "id_pe_mes")
+
+env_data <- env_data %>%
+  mutate(cl_drai2 = case_when(cl_drai %in% 0 ~ "excessif",
+                              cl_drai %in% c(10:14) ~ "rapide",
+                              cl_drai == 16 ~ "complexe",
+                              cl_drai %in% c(20:24) ~ "bon",
+                              cl_drai %in% c(30:34) ~ "modere",
+                              cl_drai %in% c(40:44) ~ "imparfait",
+                              cl_drai %in% c(50:54) ~ "mauvais",
+                              cl_drai %in% c(60:64) ~ "tres_mauvais"))
+env_data$cl_drai2 <- as.factor(env_data$cl_drai2)
 
 saveRDS(env_data, "data/env_data_fev2023.RDS")
