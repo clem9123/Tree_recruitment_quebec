@@ -1,0 +1,172 @@
+"code","nom_fr","nom_latin","zone","type","commerciale"
+"AEH","Marronnier d'Inde*","Aesculus hippocastanum","tempérée","Feuillus",FALSE
+"AMC","Amélanchier arborescent",NA,NA,NA,NA
+"AME","Amélanchier sp.","Amelanchier sp. Nombreuses espèces possibles","tempérée","Feuillus",FALSE
+"AMF","Faux-indigo commun",NA,NA,NA,NA
+"AMG","Amélanchier de Gaspésie",NA,NA,NA,NA
+"AML","Amélanchier glabre",NA,NA,NA,NA
+"AMP","Amélanchier en épis",NA,NA,NA,NA
+"AMR","Amélanchier de Bartram",NA,NA,NA,NA
+"ARM","Aronia noir",NA,NA,NA,NA
+"ARO","Aronie",NA,NA,NA,NA
+"ATA","Clématite verticillée",NA,NA,NA,NA
+"AUC","Aulne crispé","Alnus crispa var. mollis (Alnus viridis subsp. crispa)","boréale","Feuillus",FALSE
+"AUR","Aulne rugueux","Alnus rugosa var. Americana (Alnus incana supsp, rugosa)","boréale","Feuillus",FALSE
+"AUT","Aulne tendre*","Alnus serrulata","boréale","Feuillus",FALSE
+"BEG","Bouleau glanduleux",NA,NA,NA,NA
+"BEM","Bouleau mineur",NA,NA,NA,NA
+"BEP","Bouleau nain",NA,NA,NA,NA
+"BET","Épine-vinette du Japon",NA,NA,NA,NA
+"BOG","Bouleau gris (à feuilles de peuplier)","Betula populifolia","tempérée","Feuillus",TRUE
+"BOJ","Bouleau jaune","Betula alleghaniensis","tempérée","Feuillus",TRUE
+"BOP","Bouleau à papier (blanc)","Betula papyrifera","tempérée","Feuillus",TRUE
+"CAC","Caryer cordiforme","Carya cordiformis","tempérée","Feuillus",TRUE
+"CAF","Caryer à fruits doux (ovale)","Carya ovata","tempérée","Feuillus",TRUE
+"CAR","Charme de Caroline","Carpinus caroliniana","tempérée","Feuillus",FALSE
+"CEO","Micocoulier occidental","Celtis occidentalis","tempérée","Feuillus",FALSE
+"CEP","Céphalanthe occidental",NA,NA,NA,NA
+"CES","Bourreau-des-arbres",NA,NA,NA,NA
+"CET","Cerisier tardif","Prunus serotina","tempérée","Feuillus",TRUE
+"CHB","Chêne blanc","Quercus alba","tempérée","Feuillus",TRUE
+"CHD","Chêne pédonculé*","Quercus robur","tempérée","Feuillus",TRUE
+"CHE","Chêne bicolore","Quercus bicolor","tempérée","Feuillus",TRUE
+"CHG","Chêne à gros fruits","Quercus macrocarpa","tempérée","Feuillus",TRUE
+"CHR","Chêne rouge","Quercus rubra var. borealis","tempérée","Feuillus",TRUE
+"CLV","Clématite de Virginie",NA,NA,NA,NA
+"COA","Cornouiller à feuilles alternes","Cornus alternifolia","tempérée","Feuillus",FALSE
+"COC","Noisetier à long bec",NA,NA,NA,NA
+"COP","Comptonie voyageuse",NA,NA,NA,NA
+"COR","Cornouiller stolonifère",NA,NA,NA,NA
+"COU","Cornus rugosa",NA,NA,NA,NA
+"CRA","Aubépine sp.","Crataegus sp. Nombreuses espèces possibles","tempérée","Feuillus",FALSE
+"DIE","Dièreville chèvrefeuille",NA,NA,NA,NA
+"DIR","Dirca des marais",NA,NA,NA,NA
+"ELA","Olivier de Bohême","Elaeagnus angustifolia","tempérée","Feuillus",FALSE
+"ELC","Chalef argenté***","Elaeagnus commutata","tempérée","Feuillus",FALSE
+"EPB","epinette blanche","picea glauca","boréale","Resineux",TRUE
+"EPN","epinette noire","picea mariana","boréale","Resineux",TRUE
+"EPO","epinette de norvege","picea abies","boréale","Resineux",TRUE
+"EPR","epinette rouge","picea rubens","boréale","Resineux",TRUE
+"ERA","Érable argenté","Acer saccharinum","tempérée","Feuillus",TRUE
+"ERB","Érable de Norvège*","Acer ptatnoides","tempérée","Feuillus",TRUE
+"ERE","Érable à épis","Acer spicatum","boréale","Feuillus",FALSE
+"ERG","Érable négondo (à Giguère)*","Acer negundo","tempérée","Feuillus",FALSE
+"ERN","Érable noir","Acer nigrum","tempérée","Feuillus",TRUE
+"ERP","Érable de Pennsylvanie","Acer pensylvanicum","boréale","Feuillus",FALSE
+"ERR","Érable rouge","Acer rubrum","tempérée","Feuillus",TRUE
+"ERS","Érable à sucre","Acer saccharum","tempérée","Feuillus",TRUE
+"ERV","Érable de Virginie","Acer platanoides","tempérée","Feuillus",FALSE
+"FEU","Feuillu inconnu",NA,NA,NA,NA
+"FRA","Frêne d'Amérique (blanc)","Fraxinus americana","tempérée","Feuillus",TRUE
+"FRN","Frêne noir","Fraxinus nigra","tempérée","Feuillus",TRUE
+"FRP","Frêne de Pennsylvanie (rouge)","Fraxinus pennsylvanica","tempérée","Feuillus",TRUE
+"HAV","Hamamélis de Virginie** (Noisetier des sorcières)","Hamamelis viriniana","tempérée","Feuillus",FALSE
+"HEG","Hêtre à grandes feuilles","Fagus grandifolia","tempérée","Feuillus",TRUE
+"ILV","Houx verticillé",NA,NA,NA,NA
+"INC","Genre inconnu",NA,NA,NA,NA
+"JUC","Genévrier commun",NA,NA,NA,NA
+"JUH","Genévrier horizontal",NA,NA,NA,NA
+"JUN","Genévriers",NA,NA,NA,NA
+"JUV","Genévrier de Virginie","Juniperus virginiana","tempérée","Feuillus",FALSE
+"KAA","Kalmia à feuilles étroites",NA,NA,NA,NA
+"LEG","Thé du Labrador",NA,NA,NA,NA
+"LOD","Chèvrefeuille dioïque",NA,NA,NA,NA
+"LOH","Chèvrefeuille hirsute",NA,NA,NA,NA
+"LON","Chèvrefeuille du Canada",NA,NA,NA,NA
+"LOO","Chèvrefeuille feuil. oblongues",NA,NA,NA,NA
+"LOS","Chèvrefeuille",NA,NA,NA,NA
+"LOT","Chèvrefeuille de Tartarie",NA,NA,NA,NA
+"LOV","Chèvrefeuille velu",NA,NA,NA,NA
+"MAS","Pommiers*","Malus sp.","tempérée","Feuillus",FALSE
+"MEB","melèze de sibérie*","larix sibirica","boréale","Resineux",TRUE
+"MEH","melèze hybride","larix x marschlinsii","boréale","Resineux",TRUE
+"MEJ","melèze du japon*","larix leptolepis","boréale","Resineux",TRUE
+"MEL","melèze laricin","larix laricina","boréale","Resineux",TRUE
+"MEU","melèze européen","larix decidua","boréale","Resineux",TRUE
+"MYG","Myrique baumier",NA,NA,NA,NA
+"NCO","Essence non-commerciale",NA,NA,NA,NA
+"NEM","Némopanthe mucroné",NA,NA,NA,NA
+"NOC","Noyer cendré","Juglans cinerea","tempérée","Feuillus",TRUE
+"NON","Noyer noir","Juglans nigra","tempérée","Feuillus",TRUE
+"ORA","Orme d'Amérique","Ulmus americana","tempérée","Feuillus",TRUE
+"ORR","Orme rouge","Ulmus rubra","tempérée","Feuillus",TRUE
+"ORS","Orme de Sibérie*","Ulmus pumila","boréale","Feuillus",FALSE
+"ORT","Orme de Thomas (liège)","Ulmus thomasii","tempérée","Feuillus",TRUE
+"OSV","Ostryer de Virginie","Ostrya virginiana","tempérée","Feuillus",TRUE
+"PAQ","Parthénocisse à cinq folioles",NA,NA,NA,NA
+"PEB","Peuplier baumier","Populus balsamifera","tempérée","Feuillus",TRUE
+"PED","Peuplier deltoïde","Populus deltoides","tempérée","Feuillus",TRUE
+"PEE","Peuplier d'Italie (noir var. Lombardie)*","Populus nigra var. italica","tempérée","Feuillus",TRUE
+"PEG","Peuplier à grandes dent","Populus grandidentata","tempérée","Feuillus",TRUE
+"PEH","Peuplier hybride","Populus sp X P. sp.","tempérée","Feuillus",TRUE
+"PEL","Peuplier blanc*","Populus alba","tempérée","Feuillus",TRUE
+"PET","Peuplier faux tremble","Populus tremuloides","tempérée","Feuillus",TRUE
+"PEU","Peuplier européen",NA,NA,NA,NA
+"PHO","Physocarpe à feuilles d'obier",NA,NA,NA,NA
+"PIB","pin blanc","pinus strobus","tempérée","Resineux",TRUE
+"PID","pin rigide","pinus rigida","tempérée","Resineux",TRUE
+"PIG","pin gris","pinus banksiana","boréale","Resineux",TRUE
+"PIR","pin rouge","pinus resinosa","tempérée","Resineux",TRUE
+"PIS","pin sylvestre","pinus sylvestris","tempérée","Resineux",TRUE
+"PLO","Platane occidental**","Platanus occidentalis","tempérée","Feuillus",TRUE
+"POF","Potentilla fruticosa",NA,NA,NA,NA
+"PRN","Prunier noir**","Prunus nigra","tempérée","Feuillus",FALSE
+"PRP","Cerisier de Pennsylvanie","Prunus pensylvanica","tempérée","Feuillus",FALSE
+"PRU","pruche de l'est","tsuga canadensis","tempérée","Resineux",TRUE
+"PRV","Cerisier de Virginie","Prunus virginiana","tempérée","Feuillus",FALSE
+"PYB","Aronie à feuilles d'arbousier",NA,NA,NA,NA
+"RES","Résineux inconnu",NA,NA,NA,NA
+"RHA","Nerprun à feuilles d'aulne",NA,NA,NA,NA
+"RHF","Nerprun bourdaine",NA,NA,NA,NA
+"RHM","Nerprun cathartique",NA,NA,NA,NA
+"RHR","Herbe a puce",NA,NA,NA,NA
+"RHS","Nerprun sp.","Rhamnus sp. Espèces possibles R. frangula (Frangula alnus) R. cathartica","tempérée","Feuillus",FALSE
+"RHT","Sumac vinaigrier","Rhus typhina","tempérée","Feuillus",FALSE
+"RIA","Gadellier américain",NA,NA,NA,NA
+"RIB","Gadellier ou groseillier",NA,NA,NA,NA
+"RIC","Groseillier des chiens",NA,NA,NA,NA
+"RIG","Gadellier glanduleux",NA,NA,NA,NA
+"RIH","Groseillier hérissé",NA,NA,NA,NA
+"RIL","Gadellier lacustre",NA,NA,NA,NA
+"RIT","Gadellier amer",NA,NA,NA,NA
+"ROA","Rosier aciculaire",NA,NA,NA,NA
+"ROP","Robinier faux-acacia*","Robinia pseudoacacia","tempérée","Feuillus",TRUE
+"ROS","Rosier",NA,NA,NA,NA
+"RUA","Ronce des Alléghanys",NA,NA,NA,NA
+"RUD","Ronce odorante",NA,NA,NA,NA
+"RUH","Ronce hispide",NA,NA,NA,NA
+"RUI","Framboisier rouge",NA,NA,NA,NA
+"RUO","Framboisier noir",NA,NA,NA,NA
+"RUS","Rubus sp.",NA,NA,NA,NA
+"SAB","sapin baumier","abies balsamea","boréale","Resineux",TRUE
+"SAC","Sureau blanc",NA,NA,NA,NA
+"SAD","Saule discolore",NA,NA,NA,NA
+"SAH","Saule humble",NA,NA,NA,NA
+"SAK","Saule de Bebb",NA,NA,NA,NA
+"SAL","Saules","Salix sp. Nombreuses espèces possibles","boréale","Feuillus",FALSE
+"SAP","Sureau pubescent",NA,NA,NA,NA
+"SHP","Shépherdie du Canada",NA,NA,NA,NA
+"SOA","Sorbier d'Amérique","Sorbus americana","tempérée","Feuillus",FALSE
+"SOD","Sorbier des montagnes","Sorbus decora","tempérée","Feuillus",FALSE
+"SOU","Sorbier des oiseleurs*","Sorbus aucuparia","tempérée","Feuillus",FALSE
+"SPA","Spirée",NA,NA,NA,NA
+"SPL","Spirée à larges feuilles",NA,NA,NA,NA
+"SPT","Spirée tomenteuse",NA,NA,NA,NA
+"SPY","Spirée blanche",NA,NA,NA,NA
+"SXL","Saule brillant",NA,NA,NA,NA
+"SXN","Saule noir",NA,NA,NA,NA
+"SYA","Symphorine blanche",NA,NA,NA,NA
+"SYL","Lilas commun",NA,NA,NA,NA
+"SYV","Lilas commun*","Syringa vulgaris","tempérée","Feuillus",FALSE
+"TAC","If du Canada",NA,NA,NA,NA
+"THO","thuya occidental","thuya occidentalis","tempérée","Resineux",TRUE
+"TIL","Tilleul d'Amérique","Tilia americana","tempérée","Feuillus",TRUE
+"TOV","Sumac à vernis**","Toxicodendron vernis","tempérée","Feuillus",FALSE
+"VIB","Viorne flexible**","Viburnum lentago","tempérée","Feuillus",FALSE
+"VIC","Viorne cassinoïdes",NA,NA,NA,NA
+"VIE","Viorne comestible",NA,NA,NA,NA
+"VIF","Viorne à feuilles d'érables",NA,NA,NA,NA
+"VIL","Viorne bois-d'orignal",NA,NA,NA,NA
+"VIR","Vigne des rivages",NA,NA,NA,NA
+"VIT","Viorne trilobée",NA,NA,NA,NA
+"ZAA","Clavalier d'Amérique",NA,NA,NA,NA
